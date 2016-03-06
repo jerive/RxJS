@@ -1,6 +1,35 @@
 {
   "source": "./dist/es6",
   "destination": "./tmp/docs",
+  "test": {
+    "type": "mocha",
+    "source": "./spec-js",
+    "includes": ["(spec)\\.(js|ts)$"]
+  },
   "undocumentIdentifier": false,
-  "index": "./doc/index.md"
+  "title": "RxJS",
+  "styles": ["./doc/styles/main.css"],
+  "scripts": [
+    "./dist/global/Rx.umd.min.js",
+    "./doc/asset/devtools-welcome.js"
+  ],
+  "index": "./doc/index.md",
+  "plugins": [
+    {"name": "./tools/custom-esdoc-plugin.js"}
+  ],
+  "manual": {
+    "asset": "./doc/asset",
+    "overview": [
+      "./doc/introduction.md",
+      "./doc/observable.md",
+      "./doc/observer.md",
+      "./doc/subscription.md",
+      "./doc/subject.md",
+      "./doc/operators.md",
+      "./doc/scheduler.md"
+    ],
+    "installation": [
+      "./doc/installation.md"
+    ]
+  }
 }
