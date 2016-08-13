@@ -1,8 +1,8 @@
 import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
 import {Scheduler} from '../Scheduler';
-import {asap} from '../scheduler/asap';
-import {Subscription} from '../Subscription';
+import {async} from '../scheduler/async';
+import {Subscription, TeardownLogic} from '../Subscription';
 import {Observable} from '../Observable';
 import {isDate} from '../util/isDate';
 import {OuterSubscriber} from '../OuterSubscriber';
@@ -18,7 +18,7 @@ import {subscribeToResult} from '../util/subscribeToResult';
  */
 export function timeoutWith<T, R>(due: number | Date,
                                   withObservable: Observable<R>,
-                                  scheduler: Scheduler = asap): Observable<T | R> {
+                                  scheduler: Scheduler = async): Observable<T | R> {
   let absoluteTimeout = isDate(due);
   let waitFor = absoluteTimeout ? (+due - scheduler.now()) : Math.abs(<number>due);
   return this.lift(new TimeoutWithOperator(waitFor, absoluteTimeout, withObservable, scheduler));
@@ -36,13 +36,18 @@ class TimeoutWithOperator<T> implements Operator<T, T> {
               private scheduler: Scheduler) {
   }
 
-  call(subscriber: Subscriber<T>) {
-    return new TimeoutWithSubscriber(
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new TimeoutWithSubscriber(
       subscriber, this.absoluteTimeout, this.waitFor, this.withObservable, this.scheduler
-    );
+    ));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
   private timeoutSubscription: Subscription = undefined;
   private index: number = 0;
@@ -99,7 +104,7 @@ class TimeoutWithSubscriber<T, R> extends OuterSubscriber<T, R> {
   }
 
   handleTimeout(): void {
-    if (!this.isUnsubscribed) {
+    if (!this.closed) {
       const withObservable = this.withObservable;
       this.unsubscribe();
       this.destination.add(this.timeoutSubscription = subscribeToResult(this, withObservable));

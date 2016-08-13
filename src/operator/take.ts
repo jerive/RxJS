@@ -3,23 +3,51 @@ import {Subscriber} from '../Subscriber';
 import {ArgumentOutOfRangeError} from '../util/ArgumentOutOfRangeError';
 import {EmptyObservable} from '../observable/EmptyObservable';
 import {Observable} from '../Observable';
+import {TeardownLogic} from '../Subscription';
 
 /**
- * @param total
- * @return {any}
+ * Emits only the first `count` values emitted by the source Observable.
+ *
+ * <span class="informal">Takes the first `count` values from the source, then
+ * completes.</span>
+ *
+ * <img src="./img/take.png" width="100%">
+ *
+ * `take` returns an Observable that emits only the first `count` values emitted
+ * by the source Observable. If the source emits fewer than `count` values then
+ * all of its values are emitted. After that, it completes, regardless if the
+ * source completes.
+ *
+ * @example <caption>Take the first 5 seconds of an infinite 1-second interval Observable</caption>
+ * var interval = Rx.Observable.interval(1000);
+ * var five = interval.take(5);
+ * five.subscribe(x => console.log(x));
+ *
+ * @see {@link takeLast}
+ * @see {@link takeUntil}
+ * @see {@link takeWhile}
+ * @see {@link skip}
+ *
+ * @throws {ArgumentOutOfRangeError} When using `take(i)`, it delivers an
+ * ArgumentOutOrRangeError to the Observer's `error` callback if `i < 0`.
+ *
+ * @param {number} count The maximum number of `next` values to emit.
+ * @return {Observable<T>} An Observable that emits only the first `count`
+ * values emitted by the source Observable, or all of the values from the source
+ * if the source emits fewer than `count` values.
  * @method take
  * @owner Observable
  */
-export function take<T>(total: number): Observable<T> {
-  if (total === 0) {
+export function take<T>(count: number): Observable<T> {
+  if (count === 0) {
     return new EmptyObservable<T>();
   } else {
-    return this.lift(new TakeOperator(total));
+    return this.lift(new TakeOperator(count));
   }
 }
 
 export interface TakeSignature<T> {
-  (total: number): Observable<T>;
+  (count: number): Observable<T>;
 }
 
 class TakeOperator<T> implements Operator<T, T> {
@@ -29,11 +57,16 @@ class TakeOperator<T> implements Operator<T, T> {
     }
   }
 
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new TakeSubscriber(subscriber, this.total);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new TakeSubscriber(subscriber, this.total));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class TakeSubscriber<T> extends Subscriber<T> {
   private count: number = 0;
 
@@ -47,6 +80,7 @@ class TakeSubscriber<T> extends Subscriber<T> {
       this.destination.next(value);
       if (this.count === total) {
         this.destination.complete();
+        this.unsubscribe();
       }
     }
   }

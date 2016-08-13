@@ -10,5 +10,11 @@ This is a rewrite of [Reactive-Extensions/RxJS](https://github.com/Reactive-Exte
 *Read the Manual on Observables, Observer, Subject, etc*
 ### [» Full reference](./identifiers.html)
 *Read detailed documentation on each operator*
+### [» View examples](./manual/tutorial.html)
+*Read our tutorials on using RxJS in real applications*
+
+- - -
+
+<div class="decision-tree-widget"></div>
 
 **Hint: open your DevTools to experiment with RxJS.**

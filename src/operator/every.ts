@@ -13,8 +13,7 @@ import {Subscriber} from '../Subscriber';
  */
 export function every<T>(predicate: (value: T, index: number, source: Observable<T>) => boolean,
                          thisArg?: any): Observable<boolean> {
-  const source = this;
-  return source.lift(new EveryOperator(predicate, thisArg, source));
+  return this.lift(new EveryOperator(predicate, thisArg, this));
 }
 
 export interface EverySignature<T> {
@@ -27,11 +26,16 @@ class EveryOperator<T> implements Operator<T, boolean> {
               private source?: Observable<T>) {
   }
 
-  call(observer: Subscriber<boolean>): Subscriber<T> {
-    return new EverySubscriber(observer, this.predicate, this.thisArg, this.source);
+  call(observer: Subscriber<boolean>, source: any): any {
+    return source._subscribe(new EverySubscriber(observer, this.predicate, this.thisArg, this.source));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class EverySubscriber<T> extends Subscriber<T> {
   private index: number = 0;
 

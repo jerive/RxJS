@@ -1,6 +1,7 @@
 import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
 import {Observable} from '../Observable';
+import {TeardownLogic} from '../Subscription';
 
 /**
  * Returns an Observable that skips `n` items emitted by an Observable.
@@ -25,11 +26,16 @@ class SkipOperator<T> implements Operator<T, T> {
   constructor(private total: number) {
   }
 
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new SkipSubscriber(subscriber, this.total);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new SkipSubscriber(subscriber, this.total));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class SkipSubscriber<T> extends Subscriber<T> {
   count: number = 0;
 

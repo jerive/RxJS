@@ -1,6 +1,6 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
 
 const Observable = Rx.Observable;
 
@@ -94,34 +94,37 @@ describe('Observable.prototype.max', () => {
     expectSubscriptions(source.subscriptions).toBe(subs);
   });
 
-  it('should max a range() source observable', (done: DoneSignature) => {
+  it('should max a range() source observable', (done: MochaDone) => {
     (<any>Rx.Observable.range(1, 10000)).max().subscribe(
       (value: number) => {
-        expect(value).toEqual(10000);
-      },
-      done.fail,
-      done
-    );
+        expect(value).to.equal(10000);
+      }, (x) => {
+        done(new Error('should not be called'));
+      }, () => {
+        done();
+      });
   });
 
-  it('should max a range().skip(1) source observable', (done: DoneSignature) => {
+  it('should max a range().skip(1) source observable', (done: MochaDone) => {
     (<any>Rx.Observable.range(1, 10)).skip(1).max().subscribe(
       (value: number) => {
-        expect(value).toEqual(10);
-      },
-      done.fail,
-      done
-    );
+        expect(value).to.equal(10);
+      }, (x) => {
+        done(new Error('should not be called'));
+      }, () => {
+        done();
+      });
   });
 
-  it('should max a range().take(1) source observable', (done: DoneSignature) => {
+  it('should max a range().take(1) source observable', (done: MochaDone) => {
     (<any>Rx.Observable.range(1, 10)).take(1).max().subscribe(
       (value: number) => {
-        expect(value).toEqual(1);
-      },
-      done.fail,
-      done
-    );
+        expect(value).to.equal(1);
+      }, (x) => {
+        done(new Error('should not be called'));
+      }, () => {
+        done();
+      });
   });
 
   it('should work with error', () => {

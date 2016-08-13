@@ -1,4 +1,4 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
 declare const rxTestScheduler: Rx.TestScheduler;
@@ -6,13 +6,13 @@ const Observable = Rx.Observable;
 
 /** @test {sampleTime} */
 describe('Observable.prototype.sampleTime', () => {
-  asDiagram('sampleTime(110)')('should get samples on a delay', () => {
-    const e1 =   hot('----a-^--b----c----d----e----f----|');
-    const e1subs =         '^                           !';
-    const expected =       '-----------c----------e-----|';
-    // timer              -----------!----------!---------
+  asDiagram('sampleTime(70)')('should get samples on a delay', () => {
+    const e1 =   hot('a---b-c---------d--e---f-g-h--|');
+    const e1subs =   '^                             !';
+    const expected = '-------c-------------e------h-|';
+    // timer          -------!------!------!------!--
 
-    expectObservable(e1.sampleTime(110, rxTestScheduler)).toBe(expected);
+    expectObservable(e1.sampleTime(70, rxTestScheduler)).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
   });
 

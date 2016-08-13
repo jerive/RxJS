@@ -1,6 +1,9 @@
 import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
-import {Observable} from '../Observable';
+import {Observable, ObservableInput} from '../Observable';
+
+import {OuterSubscriber} from '../OuterSubscriber';
+import {subscribeToResult} from '../util/subscribeToResult';
 
 /**
  * Catches errors on the observable to be handled by returning a new observable or throwing an error.
@@ -12,32 +15,37 @@ import {Observable} from '../Observable';
  * @method catch
  * @owner Observable
  */
-export function _catch<T, R>(selector: (err: any, caught: Observable<T>) => Observable<R>): Observable<R> {
+export function _catch<T, R>(selector: (err: any, caught: Observable<T>) => ObservableInput<R>): Observable<R> {
   const operator = new CatchOperator(selector);
   const caught = this.lift(operator);
   return (operator.caught = caught);
 }
 
 export interface CatchSignature<T> {
-  <R>(selector: (err: any, caught: Observable<T>) => Observable<R>): Observable<R>;
+  (selector: (err: any, caught: Observable<T>) => ObservableInput<T>): Observable<T>;
+  <R>(selector: (err: any, caught: Observable<T>) => ObservableInput<R>): Observable<R>;
 }
 
 class CatchOperator<T, R> implements Operator<T, R> {
-  caught: Observable<any>;
+  caught: Observable<T>;
 
-  constructor(private selector: (err: any, caught: Observable<any>) => Observable<any>) {
+  constructor(private selector: (err: any, caught: Observable<T>) => ObservableInput<T | R>) {
   }
 
-  call(subscriber: Subscriber<R>): Subscriber<T> {
-    return new CatchSubscriber(subscriber, this.selector, this.caught);
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source._subscribe(new CatchSubscriber(subscriber, this.selector, this.caught));
   }
 }
 
-class CatchSubscriber<T> extends Subscriber<T> {
-
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+class CatchSubscriber<T, R> extends OuterSubscriber<T, R> {
   constructor(destination: Subscriber<any>,
-              private selector: (err: any, caught: Observable<any>) => Observable<any>,
-              private caught: Observable<any>) {
+              private selector: (err: any, caught: Observable<T>) => ObservableInput<T | R>,
+              private caught: Observable<T>) {
     super(destination);
   }
 
@@ -54,13 +62,9 @@ class CatchSubscriber<T> extends Subscriber<T> {
         return;
       }
 
-      this._innerSub(result);
+      this.unsubscribe();
+      (<any>this.destination).remove(this);
+      subscribeToResult(this, result);
     }
-  }
-
-  private _innerSub(result: Observable<any>) {
-    this.unsubscribe();
-    (<any>this.destination).remove(this);
-    result.subscribe(this.destination);
   }
 }

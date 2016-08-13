@@ -1,83 +1,12 @@
-///<reference path='../../typings/es6-shim/es6-shim.d.ts'/>
-///<reference path='../../typings/jasmine/jasmine.d.ts'/>
-///<reference path='../../typings/lodash/lodash.d.ts'/>
+///<reference path='../../typings/index.d.ts'/>
 declare const global: any;
 declare const Symbol: any;
 
-//Fail timeouts faster
-//Individual suites/specs should specify longer timeouts if needed.
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 5000;
-
-import * as _ from 'lodash';
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import * as Rx from '../../dist/cjs/Rx';
+import {ObservableInput} from '../../dist/cjs/Observable';
 import {root} from '../../dist/cjs/util/root';
-import * as marbleHelpers from './marble-testing';
-
-global.rxTestScheduler = null;
-global.cold = marbleHelpers.cold;
-global.hot = marbleHelpers.hot;
-global.time = marbleHelpers.time;
-global.expectObservable = marbleHelpers.expectObservable;
-global.expectSubscriptions = marbleHelpers.expectSubscriptions;
-
-//amending type definition of jasmine which seems doesn't have this
-export interface DoneSignature {
-  (): void;
-  fail(description?: string): void;
-}
-
-const defaultAssertion: (expectation: string, assertion?: (done: DoneSignature) => void, timeout?: number) => void = global.it;
-const singleAssertion: (expectation: string, assertion?: (done: DoneSignature) => void, timeout?: number) => void = global.fit;
-
-function assertAction(done: DoneSignature, assertion: (done?: DoneSignature) => void): void {
-  global.rxTestScheduler = new Rx.TestScheduler(marbleHelpers.assertDeepEqual);
-  let error: any;
-  let errorHappened: boolean = false;
-
-  try {
-    assertion();
-    global.rxTestScheduler.flush();
-  } catch (e) {
-    errorHappened = true;
-    error = e;
-  } finally {
-    if (errorHappened) {
-      setTimeout(function () { done.fail(error); });
-    } else {
-      setTimeout(function () { done(); });
-    }
-  }
-}
-
-export function asDiagram(expectation: string): (expectation: string, assertion?: (done: DoneSignature) => void, timeout?: number) => void {
-  return it;
-}
-
-export function it(expectation: string, assertion?: (done?: DoneSignature) => void, timeout?: number): void {
-  if (assertion.length === 0) {
-    defaultAssertion(expectation, (done: DoneSignature) => {
-      assertAction(done, assertion);
-    });
-  } else {
-    defaultAssertion.apply(this, arguments);
-  }
-}
-
-export function fit(expectation: string, assertion?: (done?: DoneSignature) => void, timeout?: number): void {
-  if (assertion.length === 0) {
-    singleAssertion(expectation, (done: DoneSignature) => {
-      assertAction(done, assertion);
-    });
-  } else {
-    singleAssertion.apply(this, arguments);
-  }
-}
-
-global.it = it;
-global.fit = fit;
-if (!global.asDiagram) {
-  global.asDiagram = asDiagram;
-}
+import {$$iterator} from '../../dist/cjs/symbol/iterator';
+import $$symbolObservable from 'symbol-observable';
 
 export function lowerCaseO<T>(...args): Rx.Observable<T> {
   const values = [].slice.apply(arguments);
@@ -98,62 +27,23 @@ export function lowerCaseO<T>(...args): Rx.Observable<T> {
   return <any>o;
 };
 
-function stringify(x) {
-  return JSON.stringify(x, function (key, value) {
-    if (Array.isArray(value)) {
-      return '[' + value
-        .map(function (i) {
-          return '\n\t' + stringify(i);
-        }) + '\n]';
-    }
-    return value;
-  })
-  .replace(/\\"/g, '"')
-  .replace(/\\t/g, '\t')
-  .replace(/\\n/g, '\n');
-}
-
-beforeEach(function () {
-  jasmine.addMatchers({
-    toDeepEqual: function (util, customEqualityTesters) {
+export const createObservableInputs = <T>(value: T) => Rx.Observable.of<ObservableInput<T>>(
+  Rx.Observable.of<T>(value),
+  Rx.Observable.of<T>(value, Rx.Scheduler.async),
+  [value],
+  Promise.resolve(value),
+  <any>({ [$$iterator]: () => {
+      const iteratorResults = [
+        {value, done: false},
+        {done: true}
+      ];
       return {
-        compare: function (actual, expected) {
-          let result: any = { pass: _.isEqual(actual, expected) };
-
-          if (!result.pass && Array.isArray(actual) && Array.isArray(expected)) {
-            result.message = 'Expected \n';
-            actual.forEach(function (x) {
-              result.message += stringify(x) + '\n';
-            });
-            result.message += '\nto deep equal \n';
-            expected.forEach(function (x) {
-              result.message += stringify(x) + '\n';
-            });
-          }
-
-          return result;
+        next: () => {
+          return iteratorResults.shift();
         }
       };
-    }
-  });
-});
-
-Object.defineProperty(Error.prototype, 'toJSON', {
-  value: function () {
-    const alt = {};
-
-    Object.getOwnPropertyNames(this).forEach(function (key) {
-      if (key !== 'stack') {
-        alt[key] = this[key];
-      }
-    }, this);
-    return alt;
-  },
-  configurable: true
-});
+    }}),
+  <any>({ [$$symbolObservable]: () => Rx.Observable.of(value) })
+);
 
 global.__root__ = root;
-
-afterEach(function () {
-  global.rxTestScheduler = null;
-});

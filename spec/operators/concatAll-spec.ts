@@ -1,6 +1,6 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
 
 declare const rxTestScheduler: Rx.TestScheduler;
 const Observable = Rx.Observable;
@@ -19,8 +19,9 @@ describe('Observable.prototype.concatAll', () => {
     expectObservable(result).toBe(expected);
   });
 
-  it('should concat sources from promise', (done: DoneSignature) => {
-    const sources = Rx.Observable.fromArray([
+  it('should concat sources from promise', function (done: MochaDone) {
+    this.timeout(2000);
+    const sources = Rx.Observable.from([
       new Promise((res: any) => { res(0); }),
       new Promise((res: any) => { res(1); }),
       new Promise((res: any) => { res(2); }),
@@ -30,15 +31,17 @@ describe('Observable.prototype.concatAll', () => {
     const res = [];
     (<any>sources.concatAll()).subscribe(
       (x: number) => { res.push(x); },
-      (err: any) => { done.fail('should not be called.'); },
+      (err: any) => { done(new Error('should not be called')); },
       () => {
-        expect(res).toEqual([0, 1, 2, 3]);
+        expect(res).to.deep.equal([0, 1, 2, 3]);
         done();
       });
-  }, 2000);
+  });
 
-  it('should concat and raise error from promise', (done: DoneSignature) => {
-    const sources = Rx.Observable.fromArray([
+  it('should concat and raise error from promise', function (done: MochaDone) {
+    this.timeout(2000);
+
+    const sources = Rx.Observable.from([
       new Promise((res: any) => { res(0); }),
       new Promise((res: any, rej: any) => { rej(1); }),
       new Promise((res: any) => { res(2); }),
@@ -49,15 +52,15 @@ describe('Observable.prototype.concatAll', () => {
     (<any>sources.concatAll()).subscribe(
       (x: number) => { res.push(x); },
       (err: any) => {
-        expect(res.length).toBe(1);
-        expect(err).toBe(1);
+        expect(res.length).to.equal(1);
+        expect(err).to.equal(1);
         done();
       },
-      () => { done.fail('should not be called.'); });
-  }, 2000);
+      () => { done(new Error('should not be called')); });
+  });
 
   it('should concat all observables in an observable', () => {
-    const e1 = Rx.Observable.fromArray([
+    const e1 = Rx.Observable.from([
       Rx.Observable.of('a'),
       Rx.Observable.of('b'),
       Rx.Observable.of('c')
@@ -68,7 +71,7 @@ describe('Observable.prototype.concatAll', () => {
   });
 
   it('should throw if any child observable throws', () => {
-    const e1 = Rx.Observable.fromArray([
+    const e1 = Rx.Observable.from([
       Rx.Observable.of('a'),
       Rx.Observable.throw('error'),
       Rx.Observable.of('c')

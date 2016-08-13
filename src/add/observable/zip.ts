@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {zipStatic} from '../../operator/zip';
+import {zip as zipStatic} from '../../observable/zip';
 
 Observable.zip = zipStatic;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let zip: typeof zipStatic;
+  }
+}

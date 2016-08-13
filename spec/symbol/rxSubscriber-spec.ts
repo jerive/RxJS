@@ -1,13 +1,13 @@
-import * as Rx from '../../dist/cjs/Rx';
-import * as RxKitchenSink from '../../dist/cjs/Rx.KitchenSink';
-import {SymbolShim} from '../../dist/cjs/util/SymbolShim';
+import {expect} from 'chai';
+import {root} from '../../dist/cjs/util/root';
+import {$$rxSubscriber} from '../../dist/cjs/symbol/rxSubscriber';
 
 describe('rxSubscriber symbol', () => {
-  it('should exist on Rx', () => {
-    expect(Rx.Symbol.rxSubscriber).toBe(SymbolShim.for('rxSubscriber'));
-  });
-
-  it('should exist on Rx.KitchenSink', () => {
-    expect(RxKitchenSink.Symbol.rxSubscriber).toBe(SymbolShim.for('rxSubscriber'));
+  it('should exist in the proper form', () => {
+    if (root.Symbol && root.Symbol.for) {
+      expect($$rxSubscriber).to.equal(root.Symbol.for('rxSubscriber'));
+    } else {
+      expect($$rxSubscriber).to.equal('@@rxSubscriber');
+    }
   });
 });

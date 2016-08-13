@@ -1,7 +1,6 @@
 import {Subscriber} from './Subscriber';
+import {TeardownLogic} from './Subscription';
 
-export class Operator<T, R> {
-  call(subscriber: Subscriber<R>): Subscriber<T> {
-    return new Subscriber<T>(subscriber);
-  }
+export interface Operator<T, R> {
+  call(subscriber: Subscriber<R>, source: any): TeardownLogic;
 }

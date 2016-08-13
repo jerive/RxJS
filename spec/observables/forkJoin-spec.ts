@@ -1,6 +1,7 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
-declare const {hot, expectObservable};
-import {DoneSignature, lowerCaseO} from '../helpers/test-helper';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
+declare const {hot, expectObservable, expectSubscriptions, type};
+import {lowerCaseO} from '../helpers/test-helper';
 
 const Observable = Rx.Observable;
 
@@ -102,19 +103,31 @@ describe('Observable.forkJoin', () => {
     expectObservable(e1).toBe(expected, {x: ['d', 'b', '3']});
   });
 
-  it('should accept promise', (done: DoneSignature) => {
+  it('should accept empty lowercase-o observables', () => {
+    const e1 = Observable.forkJoin(
+               hot('--a--b--c--d--|'),
+               hot('(b|)'),
+               lowerCaseO()
+            );
+    const expected = '|';
+
+    expectObservable(e1).toBe(expected);
+  });
+
+  it('should accept promise', (done: MochaDone) => {
     const e1 = Observable.forkJoin(
                Observable.of(1),
                Promise.resolve(2)
             );
 
     e1.subscribe((x: Array<number>) => {
-      expect(x).toEqual([1, 2]);
+      expect(x).to.deep.equal([1, 2]);
     },
     (err: any) => {
-      done.fail('should not be called');
-    },
-    done);
+      done(new Error('should not be called'));
+    }, () => {
+      done();
+    });
   });
 
   it('should accept array of observables', () => {
@@ -262,5 +275,97 @@ describe('Observable.forkJoin', () => {
     const expected = '------#';
 
     expectObservable(e1).toBe(expected);
+  });
+
+  it('should allow unsubscribing early and explicitly', () => {
+    const e1 =   hot('--a--^--b--c---d-| ');
+    const e1subs =        '^        !    ';
+    const e2 =   hot('---e-^---f--g---h-|');
+    const e2subs =        '^        !    ';
+    const expected =      '----------    ';
+    const unsub =         '         !    ';
+
+    const result = Observable.forkJoin(e1, e2);
+
+    expectObservable(result, unsub).toBe(expected);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should support promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let b: Promise<string>;
+      let c: Promise<boolean>;
+      let o1: Rx.Observable<[number, string, boolean]> = Observable.forkJoin(a, b, c);
+      let o2: Rx.Observable<boolean> = Observable.forkJoin(a, b, c, (aa, bb, cc) => !!aa && !!bb && cc);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let b: Rx.Observable<string>;
+      let c: Rx.Observable<boolean>;
+      let o1: Rx.Observable<[number, string, boolean]> = Observable.forkJoin(a, b, c);
+      let o2: Rx.Observable<boolean> = Observable.forkJoin(a, b, c, (aa, bb, cc) => !!aa && !!bb && cc);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support mixed observables and promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let b: Rx.Observable<string>;
+      let c: Promise<boolean>;
+      let d: Rx.Observable<string[]>;
+      let o1: Rx.Observable<[number, string, boolean, string[]]> = Observable.forkJoin(a, b, c, d);
+      let o2: Rx.Observable<boolean> = Observable.forkJoin(a, b, c, d, (aa, bb, cc, dd) => !!aa && !!bb && cc && !!dd.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>[];
+      let o1: Rx.Observable<number[]> = Observable.forkJoin(a);
+      let o2: Rx.Observable<number[]> = Observable.forkJoin(...a);
+      let o3: Rx.Observable<number> = Observable.forkJoin(a, (...x) => x.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>[];
+      let o1: Rx.Observable<number[]> = Observable.forkJoin(a);
+      let o2: Rx.Observable<number[]> = Observable.forkJoin(...a);
+      let o3: Rx.Observable<number> = Observable.forkJoin(a, (...x) => x.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single promise', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let o1: Rx.Observable<number[]> = Observable.forkJoin(a);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single observable', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let o1: Rx.Observable<number[]> = Observable.forkJoin(a);
+      /* tslint:enable:no-unused-variable */
+    });
   });
 });

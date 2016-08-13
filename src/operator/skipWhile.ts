@@ -1,6 +1,7 @@
 import {Observable} from '../Observable';
 import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
+import {TeardownLogic} from '../Subscription';
 
 /**
  * Returns an Observable that skips all items emitted by the source Observable as long as a specified condition holds
@@ -26,11 +27,16 @@ class SkipWhileOperator<T> implements Operator<T, T> {
   constructor(private predicate: (value: T, index: number) => boolean) {
   }
 
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new SkipWhileSubscriber(subscriber, this.predicate);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new SkipWhileSubscriber(subscriber, this.predicate));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class SkipWhileSubscriber<T> extends Subscriber<T> {
   private skipping: boolean = true;
   private index: number = 0;

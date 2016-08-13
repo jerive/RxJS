@@ -7,7 +7,7 @@ import {Subscriber} from '../Subscriber';
 import {OuterSubscriber} from '../OuterSubscriber';
 import {InnerSubscriber} from '../InnerSubscriber';
 import {subscribeToResult} from '../util/subscribeToResult';
-import {SymbolShim} from '../util/SymbolShim';
+import {$$iterator} from '../symbol/iterator';
 
 /**
  * @param observables
@@ -35,28 +35,34 @@ export interface ZipSignature<T> {
   <T2, T3, T4, T5>(v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>): Observable<[T, T2, T3, T4, T5]>;
   <T2, T3, T4, T5, T6>(v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>, v6: ObservableInput<T6>): Observable<[T, T2, T3, T4, T5, T6]>;
 
-  <R>(...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>): Observable<R>;
-  <R>(array: ObservableInput<any>[]): Observable<R>;
-  <R>(array: ObservableInput<any>[], project: (...values: Array<any>) => R): Observable<R>;
+  <R>(...observables: Array<ObservableInput<T> | ((...values: Array<T>) => R)>): Observable<R>;
+  <R>(array: Array<ObservableInput<T>>): Observable<R>;
+  <TOther, R>(array: Array<ObservableInput<TOther>>, project: (v1: T, ...values: Array<TOther>) => R): Observable<R>;
 }
 /* tslint:enable:max-line-length */
 
 /* tslint:disable:max-line-length */
-export function zipStatic<T>(v1: ObservableInput<T>): Observable<[T]>;
 export function zipStatic<T, T2>(v1: ObservableInput<T>, v2: ObservableInput<T2>): Observable<[T, T2]>;
 export function zipStatic<T, T2, T3>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>): Observable<[T, T2, T3]>;
 export function zipStatic<T, T2, T3, T4>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>): Observable<[T, T2, T3, T4]>;
 export function zipStatic<T, T2, T3, T4, T5>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>): Observable<[T, T2, T3, T4, T5]>;
 export function zipStatic<T, T2, T3, T4, T5, T6>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>, v6: ObservableInput<T6>): Observable<[T, T2, T3, T4, T5, T6]>;
+
 export function zipStatic<T, R>(v1: ObservableInput<T>, project: (v1: T) => R): Observable<R>;
 export function zipStatic<T, T2, R>(v1: ObservableInput<T>, v2: ObservableInput<T2>, project: (v1: T, v2: T2) => R): Observable<R>;
 export function zipStatic<T, T2, T3, R>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, project: (v1: T, v2: T2, v3: T3) => R): Observable<R>;
 export function zipStatic<T, T2, T3, T4, R>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, project: (v1: T, v2: T2, v3: T3, v4: T4) => R): Observable<R>;
 export function zipStatic<T, T2, T3, T4, T5, R>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>, project: (v1: T, v2: T2, v3: T3, v4: T4, v5: T5) => R): Observable<R>;
 export function zipStatic<T, T2, T3, T4, T5, T6, R>(v1: ObservableInput<T>, v2: ObservableInput<T2>, v3: ObservableInput<T3>, v4: ObservableInput<T4>, v5: ObservableInput<T5>, v6: ObservableInput<T6>, project: (v1: T, v2: T2, v3: T3, v4: T4, v5: T5, v6: T6) => R): Observable<R>;
-export function zipStatic<R>(...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>): Observable<R>;
+
+export function zipStatic<T>(array: ObservableInput<T>[]): Observable<T[]>;
 export function zipStatic<R>(array: ObservableInput<any>[]): Observable<R>;
+export function zipStatic<T, R>(array: ObservableInput<T>[], project: (...values: Array<T>) => R): Observable<R>;
 export function zipStatic<R>(array: ObservableInput<any>[], project: (...values: Array<any>) => R): Observable<R>;
+
+export function zipStatic<T>(...observables: Array<ObservableInput<T>>): Observable<T[]>;
+export function zipStatic<T, R>(...observables: Array<ObservableInput<T> | ((...values: Array<T>) => R)>): Observable<R>;
+export function zipStatic<R>(...observables: Array<ObservableInput<any> | ((...values: Array<any>) => R)>): Observable<R>;
 /* tslint:enable:max-line-length */
 
 /**
@@ -82,11 +88,16 @@ export class ZipOperator<T, R> implements Operator<T, R> {
     this.project = project;
   }
 
-  call(subscriber: Subscriber<R>): Subscriber<T> {
-    return new ZipSubscriber(subscriber, this.project);
+  call(subscriber: Subscriber<R>, source: any): any {
+    return source._subscribe(new ZipSubscriber(subscriber, this.project));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 export class ZipSubscriber<T, R> extends Subscriber<T> {
   private index = 0;
   private values: any;
@@ -107,8 +118,8 @@ export class ZipSubscriber<T, R> extends Subscriber<T> {
     const index = this.index++;
     if (isArray(value)) {
       iterators.push(new StaticArrayIterator(value));
-    } else if (typeof value[SymbolShim.iterator] === 'function') {
-      iterators.push(new StaticIterator(value[SymbolShim.iterator]()));
+    } else if (typeof value[$$iterator] === 'function') {
+      iterators.push(new StaticIterator(value[$$iterator]()));
     } else {
       iterators.push(new ZipBufferIterator(this.destination, this, value, index));
     }
@@ -227,14 +238,14 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
     this.length = array.length;
   }
 
-  [SymbolShim.iterator]() {
+  [$$iterator]() {
     return this;
   }
 
   next(value?: any): IteratorResult<T> {
     const i = this.index++;
     const array = this.array;
-    return i < this.length ? { value: array[i], done: false } : { done: true };
+    return i < this.length ? { value: array[i], done: false } : { value: null, done: true };
   }
 
   hasValue() {
@@ -246,6 +257,11 @@ class StaticArrayIterator<T> implements LookAheadIterator<T> {
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class ZipBufferIterator<T, R> extends OuterSubscriber<T, R> implements LookAheadIterator<T> {
   stillUnsubscribed = true;
   buffer: T[] = [];
@@ -258,7 +274,7 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R> implements LookAhead
     super(destination);
   }
 
-  [SymbolShim.iterator]() {
+  [$$iterator]() {
     return this;
   }
 
@@ -267,7 +283,7 @@ class ZipBufferIterator<T, R> extends OuterSubscriber<T, R> implements LookAhead
   next(): IteratorResult<T> {
     const buffer = this.buffer;
     if (buffer.length === 0 && this.isComplete) {
-      return { done: true };
+      return { value: null, done: true };
     } else {
       return { value: buffer.shift(), done: false };
     }

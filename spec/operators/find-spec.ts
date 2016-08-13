@@ -1,4 +1,5 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
 const Observable = Rx.Observable;
@@ -24,7 +25,7 @@ describe('Observable.prototype.find', () => {
   it('should throw if not provided a function', () => {
     expect(() => {
       (<any>Observable.of('yut', 'yee', 'sam')).find('yee');
-    }).toThrow(new TypeError('predicate is not a function'));
+    }).to.throw(TypeError, 'predicate is not a function');
   });
 
   it('should not emit if source does not emit', () => {

@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {PromiseObservable} from '../../observable/PromiseObservable';
+import {fromPromise as staticFromPromise} from '../../observable/fromPromise';
 
-Observable.fromPromise = PromiseObservable.create;
+Observable.fromPromise = staticFromPromise;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let fromPromise: typeof staticFromPromise;
+  }
+}

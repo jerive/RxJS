@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {EmptyObservable} from '../../observable/EmptyObservable';
+import {empty as staticEmpty} from '../../observable/empty';
 
-Observable.empty = EmptyObservable.create;
+Observable.empty = staticEmpty;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let empty: typeof staticEmpty;
+  }
+}

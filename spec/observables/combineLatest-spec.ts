@@ -1,6 +1,6 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
-declare const {hot, cold, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
+declare const {hot, cold, expectObservable, expectSubscriptions, type};
 
 const Observable = Rx.Observable;
 const queueScheduler = Rx.Scheduler.queue;
@@ -18,16 +18,18 @@ describe('Observable.combineLatest', () => {
     expectObservable(combined).toBe(expected, {u: 'ad', v: 'ae', w: 'af', x: 'bf', y: 'bg', z: 'cg'});
   });
 
-  it('should combine an immediately-scheduled source with an immediately-scheduled second', (done: DoneSignature) => {
+  it('should combine an immediately-scheduled source with an immediately-scheduled second', (done: MochaDone) => {
     const a = Observable.of<number>(1, 2, 3, queueScheduler);
     const b = Observable.of<number>(4, 5, 6, 7, 8, queueScheduler);
     const r = [[1, 4], [2, 4], [2, 5], [3, 5], [3, 6], [3, 7], [3, 8]];
 
     //type definition need to be updated
     Observable.combineLatest(a, b, queueScheduler).subscribe((vals: any) => {
-      (<any>expect(vals)).toDeepEqual(r.shift());
-    }, done.fail, () => {
-      expect(r.length).toBe(0);
+      expect(vals).to.deep.equal(r.shift());
+    }, (x) => {
+      done(new Error('should not be called'));
+    }, () => {
+      expect(r.length).to.equal(0);
       done();
     });
   });
@@ -470,5 +472,82 @@ describe('Observable.combineLatest', () => {
     expectObservable(result, unsub).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should support promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let b: Promise<string>;
+      let c: Promise<boolean>;
+      let o1: Rx.Observable<[number, string, boolean]> = Observable.combineLatest(a, b, c);
+      let o2: Rx.Observable<boolean> = Observable.combineLatest(a, b, c, (aa, bb, cc) => !!aa && !!bb && cc);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let b: Rx.Observable<string>;
+      let c: Rx.Observable<boolean>;
+      let o1: Rx.Observable<[number, string, boolean]> = Observable.combineLatest(a, b, c);
+      let o2: Rx.Observable<boolean> = Observable.combineLatest(a, b, c, (aa, bb, cc) => !!aa && !!bb && cc);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support mixed observables and promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let b: Rx.Observable<string>;
+      let c: Promise<boolean>;
+      let d: Rx.Observable<string[]>;
+      let o1: Rx.Observable<[number, string, boolean, string[]]> = Observable.combineLatest(a, b, c, d);
+      let o2: Rx.Observable<boolean> = Observable.combineLatest(a, b, c, d, (aa, bb, cc, dd) => !!aa && !!bb && cc && !!dd.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>[];
+      let o1: Rx.Observable<number[]> = Observable.combineLatest(a);
+      let o2: Rx.Observable<number[]> = Observable.combineLatest(...a);
+      let o3: Rx.Observable<number> = Observable.combineLatest(a, (...x) => x.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>[];
+      let o1: Rx.Observable<number[]> = Observable.combineLatest(a);
+      let o2: Rx.Observable<number[]> = Observable.combineLatest(...a);
+      let o3: Rx.Observable<number> = Observable.combineLatest(a, (...x) => x.length);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single promise', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let o1: Rx.Observable<number[]> = Observable.combineLatest(a);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single observable', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let o1: Rx.Observable<number[]> = Observable.combineLatest(a);
+      /* tslint:enable:no-unused-variable */
+    });
   });
 });

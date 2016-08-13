@@ -1,19 +1,42 @@
-import {Observable} from '../Observable';
+import {Observable, SubscribableOrPromise} from '../Observable';
 import {Subscriber} from '../Subscriber';
-import {PromiseObservable} from './PromiseObservable';
+import {Subscription} from '../Subscription';
 import {EmptyObservable} from './EmptyObservable';
-import {isPromise} from '../util/isPromise';
 import {isArray} from '../util/isArray';
 
+import {subscribeToResult} from '../util/subscribeToResult';
+import {OuterSubscriber} from '../OuterSubscriber';
+import {InnerSubscriber} from '../InnerSubscriber';
+
 /**
- *
+ * We need this JSDoc comment for affecting ESDoc.
+ * @extends {Ignored}
+ * @hide true
  */
 export class ForkJoinObservable<T> extends Observable<T> {
-  constructor(private sources: Array<Observable<any> | Promise<any>>,
+  constructor(private sources: Array<SubscribableOrPromise<any>>,
               private resultSelector?: (...values: Array<any>) => T) {
     super();
   }
 
+  /* tslint:disable:max-line-length */
+  static create<T, T2>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>): Observable<[T, T2]>;
+  static create<T, T2, T3>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>): Observable<[T, T2, T3]>;
+  static create<T, T2, T3, T4>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>): Observable<[T, T2, T3, T4]>;
+  static create<T, T2, T3, T4, T5>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>, v5: SubscribableOrPromise<T5>): Observable<[T, T2, T3, T4, T5]>;
+  static create<T, T2, T3, T4, T5, T6>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>, v5: SubscribableOrPromise<T5>, v6: SubscribableOrPromise<T6>): Observable<[T, T2, T3, T4, T5, T6]>;
+  static create<T, T2, R>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, project: (v1: T, v2: T2) => R): Observable<R>;
+  static create<T, T2, T3, R>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, project: (v1: T, v2: T2, v3: T3) => R): Observable<R>;
+  static create<T, T2, T3, T4, R>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>, project: (v1: T, v2: T2, v3: T3, v4: T4) => R): Observable<R>;
+  static create<T, T2, T3, T4, T5, R>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>, v5: SubscribableOrPromise<T5>, project: (v1: T, v2: T2, v3: T3, v4: T4, v5: T5) => R): Observable<R>;
+  static create<T, T2, T3, T4, T5, T6, R>(v1: SubscribableOrPromise<T>, v2: SubscribableOrPromise<T2>, v3: SubscribableOrPromise<T3>, v4: SubscribableOrPromise<T4>, v5: SubscribableOrPromise<T5>, v6: SubscribableOrPromise<T6>, project: (v1: T, v2: T2, v3: T3, v4: T4, v5: T5, v6: T6) => R): Observable<R>;
+  static create<T>(sources: SubscribableOrPromise<T>[]): Observable<T[]>;
+  static create<R>(sources: SubscribableOrPromise<any>[]): Observable<R>;
+  static create<T, R>(sources: SubscribableOrPromise<T>[], project: (...values: Array<T>) => R): Observable<R>;
+  static create<R>(sources: SubscribableOrPromise<any>[], project: (...values: Array<any>) => R): Observable<R>;
+  static create<T>(...sources: SubscribableOrPromise<T>[]): Observable<T[]>;
+  static create<R>(...sources: SubscribableOrPromise<any>[]): Observable<R>;
+  /* tslint:enable:max-line-length */
   /**
    * @param sources
    * @return {any}
@@ -21,8 +44,8 @@ export class ForkJoinObservable<T> extends Observable<T> {
    * @name forkJoin
    * @owner Observable
    */
-  static create<T>(...sources: Array<Observable<any> | Promise<any> |
-                                  Array<Observable<any>> |
+  static create<T>(...sources: Array<SubscribableOrPromise<any> |
+                                  Array<SubscribableOrPromise<any>> |
                                   ((...values: Array<any>) => any)>): Observable<T> {
     if (sources === null || arguments.length === 0) {
       return new EmptyObservable<T>();
@@ -36,82 +59,83 @@ export class ForkJoinObservable<T> extends Observable<T> {
     // if the first and only other argument besides the resultSelector is an array
     // assume it's been called with `forkJoin([obs1, obs2, obs3], resultSelector)`
     if (sources.length === 1 && isArray(sources[0])) {
-      sources = <Array<Observable<any>>>sources[0];
+      sources = <Array<SubscribableOrPromise<any>>>sources[0];
     }
 
     if (sources.length === 0) {
       return new EmptyObservable<T>();
     }
 
-    return new ForkJoinObservable(<Array<Observable<any> | Promise<any>>>sources, resultSelector);
+    return new ForkJoinObservable(<Array<SubscribableOrPromise<any>>>sources, resultSelector);
   }
 
-  protected _subscribe(subscriber: Subscriber<any>) {
-    const sources = this.sources;
-    const len = sources.length;
-
-    const context = { completed: 0,
-                      total: len,
-                      values: new Array(len),
-                      haveValues: new Array(len),
-                      selector: this.resultSelector };
-
-    for (let i = 0; i < len; i++) {
-      let source = sources[i];
-      if (isPromise(source)) {
-        source = new PromiseObservable(<Promise<any>>source);
-      }
-      (<Observable<any>>source).subscribe(new AllSubscriber(subscriber, i, context));
-    }
+  protected _subscribe(subscriber: Subscriber<any>): Subscription {
+    return new ForkJoinSubscriber(subscriber, this.sources, this.resultSelector);
   }
 }
 
-class AllSubscriber<T> extends Subscriber<T> {
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
+class ForkJoinSubscriber<T> extends OuterSubscriber<T, T> {
+  private completed = 0;
+  private total: number;
+  private values: any[];
+  private haveValues = 0;
 
-  constructor(destination: Subscriber<any>,
-              private index: number,
-              private context: { completed: number,
-                                 total: number,
-                                 values: any[],
-                                 haveValues: any[],
-                                 selector: (...values: Array<any>) => any }) {
+  constructor(destination: Subscriber<T>,
+              private sources: Array<SubscribableOrPromise<any>>,
+              private resultSelector?: (...values: Array<any>) => T) {
     super(destination);
-  }
 
-  protected _next(value: T): void {
-    const context = this.context;
-    const index = this.index;
+    const len = sources.length;
+    this.total = len;
+    this.values = new Array(len);
 
-    context.values[index] = value;
-    context.haveValues[index] = true;
-  }
+    for (let i = 0; i < len; i++) {
+      const source = sources[i];
+      const innerSubscription = subscribeToResult(this, source, null, i);
 
-  protected _complete(): void {
-    const destination = this.destination;
-    const context = this.context;
-
-    if (!context.haveValues[this.index]) {
-      destination.complete();
+      if (innerSubscription) {
+        (<any> innerSubscription).outerIndex = i;
+        this.add(innerSubscription);
+      }
     }
+  }
 
-    context.completed++;
+  notifyNext(outerValue: any, innerValue: T,
+             outerIndex: number, innerIndex: number,
+             innerSub: InnerSubscriber<T, T>): void {
+    this.values[outerIndex] = innerValue;
+    if (!(<any>innerSub)._hasValue) {
+      (<any>innerSub)._hasValue = true;
+      this.haveValues++;
+    }
+  }
 
-    const values = context.values;
+  notifyComplete(innerSub: InnerSubscriber<T, T>): void {
+    const destination = this.destination;
+    const { haveValues, resultSelector, values } = this;
+    const len = values.length;
 
-    if (context.completed !== values.length) {
+    if (!(<any>innerSub)._hasValue) {
+      destination.complete();
       return;
     }
 
-    if (context.haveValues.every(hasValue)) {
-      const value = context.selector ? context.selector.apply(this, values) :
-                                     values;
+    this.completed++;
+
+    if (this.completed !== len) {
+      return;
+    }
+
+    if (haveValues === len) {
+      const value = resultSelector ? resultSelector.apply(this, values) : values;
       destination.next(value);
     }
 
     destination.complete();
   }
-}
-
-function hasValue(x: any): boolean {
-  return x === true;
 }

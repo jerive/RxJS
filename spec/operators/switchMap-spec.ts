@@ -1,17 +1,31 @@
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
-declare const {hot, cold, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
+declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
 const Observable = Rx.Observable;
 
 /** @test {switchMap} */
 describe('Observable.prototype.switchMap', () => {
-  it('should switch with a selector function', (done: DoneSignature) => {
+  asDiagram('switchMap(i => 10*i\u2014\u201410*i\u2014\u201410*i\u2014| )')
+  ('should map-and-flatten each item to an Observable', () => {
+    const e1 =    hot('--1-----3--5-------|');
+    const e1subs =    '^                  !';
+    const e2 =   cold('x-x-x|              ', {x: 10});
+    const expected =  '--x-x-x-y-yz-z-z---|';
+    const values = {x: 10, y: 30, z: 50};
+
+    const result = e1.switchMap(x => e2.map(i => i * x));
+
+    expectObservable(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should switch with a selector function', (done: MochaDone) => {
     const a = Observable.of(1, 2, 3);
     const expected = ['a1', 'b1', 'c1', 'a2', 'b2', 'c2', 'a3', 'b3', 'c3'];
     a.switchMap((x: number) => Observable.of('a' + x, 'b' + x, 'c' + x))
       .subscribe((x: string) => {
-        expect(x).toBe(expected.shift());
+        expect(x).to.equal(expected.shift());
       }, null, done);
   });
 
@@ -26,7 +40,7 @@ describe('Observable.prototype.switchMap', () => {
         };
       })).subscribe();
 
-    expect(unsubbed).toEqual(['a', 'b']);
+    expect(unsubbed).to.deep.equal(['a', 'b']);
   });
 
   it('should switch inner cold observables', () => {

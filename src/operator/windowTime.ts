@@ -1,22 +1,64 @@
-import {Operator} from '../Operator';
-import {Subscriber} from '../Subscriber';
-import {Observable} from '../Observable';
-import {Subject} from '../Subject';
 import {Scheduler} from '../Scheduler';
 import {Action} from '../scheduler/Action';
-import {asap} from '../scheduler/asap';
+import {Subject} from '../Subject';
+import {Operator} from '../Operator';
+import {async} from '../scheduler/async';
+import {Subscriber} from '../Subscriber';
+import {Observable} from '../Observable';
+import {Subscription} from '../Subscription';
 
 /**
- * @param windowTimeSpan
- * @param windowCreationInterval
- * @param scheduler
- * @return {Observable<Observable<any>>|WebSocketSubject<T>|Observable<T>}
+ * Branch out the source Observable values as a nested Observable periodically
+ * in time.
+ *
+ * <span class="informal">It's like {@link bufferTime}, but emits a nested
+ * Observable instead of an array.</span>
+ *
+ * <img src="./img/windowTime.png" width="100%">
+ *
+ * Returns an Observable that emits windows of items it collects from the source
+ * Observable. The output Observable starts a new window periodically, as
+ * determined by the `windowCreationInterval` argument. It emits each window
+ * after a fixed timespan, specified by the `windowTimeSpan` argument. When the
+ * source Observable completes or encounters an error, the output Observable
+ * emits the current window and propagates the notification from the source
+ * Observable. If `windowCreationInterval` is not provided, the output
+ * Observable starts a new window when the previous window of duration
+ * `windowTimeSpan` completes.
+ *
+ * @example <caption>In every window of 1 second each, emit at most 2 click events</caption>
+ * var clicks = Rx.Observable.fromEvent(document, 'click');
+ * var result = clicks.windowTime(1000)
+ *   .map(win => win.take(2)) // each window has at most 2 emissions
+ *   .mergeAll(); // flatten the Observable-of-Observables
+ * result.subscribe(x => console.log(x));
+ *
+ * @example <caption>Every 5 seconds start a window 1 second long, and emit at most 2 click events per window</caption>
+ * var clicks = Rx.Observable.fromEvent(document, 'click');
+ * var result = clicks.windowTime(1000, 5000)
+ *   .map(win => win.take(2)) // each window has at most 2 emissions
+ *   .mergeAll(); // flatten the Observable-of-Observables
+ * result.subscribe(x => console.log(x));
+ *
+ * @see {@link window}
+ * @see {@link windowCount}
+ * @see {@link windowToggle}
+ * @see {@link windowWhen}
+ * @see {@link bufferTime}
+ *
+ * @param {number} windowTimeSpan The amount of time to fill each window.
+ * @param {number} [windowCreationInterval] The interval at which to start new
+ * windows.
+ * @param {Scheduler} [scheduler=async] The scheduler on which to schedule the
+ * intervals that determine window boundaries.
+ * @return {Observable<Observable<T>>} An observable of windows, which in turn
+ * are Observables.
  * @method windowTime
  * @owner Observable
  */
 export function windowTime<T>(windowTimeSpan: number,
                               windowCreationInterval: number = null,
-                              scheduler: Scheduler = asap): Observable<Observable<T>> {
+                              scheduler: Scheduler = async): Observable<Observable<T>> {
   return this.lift(new WindowTimeOperator<T>(windowTimeSpan, windowCreationInterval, scheduler));
 }
 
@@ -31,13 +73,25 @@ class WindowTimeOperator<T> implements Operator<T, Observable<T>> {
               private scheduler: Scheduler) {
   }
 
-  call(subscriber: Subscriber<Observable<T>>): Subscriber<T> {
-    return new WindowTimeSubscriber(
+  call(subscriber: Subscriber<Observable<T>>, source: any): any {
+    return source._subscribe(new WindowTimeSubscriber(
       subscriber, this.windowTimeSpan, this.windowCreationInterval, this.scheduler
-    );
+    ));
   }
 }
 
+interface CreationState<T> {
+  windowTimeSpan: number;
+  windowCreationInterval: number;
+  subscriber: WindowTimeSubscriber<T>;
+  scheduler: Scheduler;
+}
+
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class WindowTimeSubscriber<T> extends Subscriber<T> {
   private windows: Subject<T>[] = [];
 
@@ -49,7 +103,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     if (windowCreationInterval !== null && windowCreationInterval >= 0) {
       let window = this.openWindow();
       const closeState = { subscriber: this, window, context: <any>null };
-      const creationState = { windowTimeSpan, windowCreationInterval, subscriber: this, scheduler };
+      const creationState: CreationState<T> = { windowTimeSpan, windowCreationInterval, subscriber: this, scheduler };
       this.add(scheduler.schedule(dispatchWindowClose, windowTimeSpan, closeState));
       this.add(scheduler.schedule(dispatchWindowCreation, windowCreationInterval, creationState));
     } else {
@@ -64,7 +118,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     const len = windows.length;
     for (let i = 0; i < len; i++) {
       const window = windows[i];
-      if (!window.isUnsubscribed) {
+      if (!window.closed) {
         window.next(value);
       }
     }
@@ -82,7 +136,7 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     const windows = this.windows;
     while (windows.length > 0) {
       const window = windows.shift();
-      if (!window.isUnsubscribed) {
+      if (!window.closed) {
         window.complete();
       }
     }
@@ -93,7 +147,6 @@ class WindowTimeSubscriber<T> extends Subscriber<T> {
     const window = new Subject<T>();
     this.windows.push(window);
     const destination = this.destination;
-    destination.add(window);
     destination.next(window);
     return window;
   }
@@ -120,18 +173,30 @@ function dispatchWindowTimeSpanOnly<T>(state: TimeSpanOnlyState<T>) {
   (<any>this).schedule(state, windowTimeSpan);
 }
 
-function dispatchWindowCreation(state: any) {
+interface Context<T> {
+  action: Action<CreationState<T>>;
+  subscription: Subscription;
+}
+
+interface DispatchArg<T> {
+  subscriber: WindowTimeSubscriber<T>;
+  window: Subject<T>;
+  context: Context<T>;
+}
+
+function dispatchWindowCreation<T>(state: CreationState<T>) {
   let { windowTimeSpan, subscriber, scheduler, windowCreationInterval } = state;
   let window = subscriber.openWindow();
-  let action = <Action>this;
-  let context = { action, subscription: <any>null };
-  const timeSpanState = { subscriber, window, context };
+  let action = <Action<CreationState<T>>>this;
+  let context: Context<T> = { action, subscription: <any>null };
+  const timeSpanState: DispatchArg<T> = { subscriber, window, context };
   context.subscription = scheduler.schedule(dispatchWindowClose, windowTimeSpan, timeSpanState);
   action.add(context.subscription);
   action.schedule(state, windowCreationInterval);
 }
 
-function dispatchWindowClose({ subscriber, window, context }) {
+function dispatchWindowClose<T>(arg: DispatchArg<T>) {
+  const { subscriber, window, context } = arg;
   if (context && context.action && context.subscription) {
     context.action.remove(context.subscription);
   }

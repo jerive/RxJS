@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {FromEventPatternObservable} from '../../observable/FromEventPatternObservable';
+import {fromEventPattern as staticFromEventPattern} from '../../observable/fromEventPattern';
 
-Observable.fromEventPattern = FromEventPatternObservable.create;
+Observable.fromEventPattern = staticFromEventPattern;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let fromEventPattern: typeof staticFromEventPattern;
+  }
+}

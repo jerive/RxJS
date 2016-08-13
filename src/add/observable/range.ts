@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {RangeObservable} from '../../observable/RangeObservable';
+import {range as staticRange} from '../../observable/range';
 
-Observable.range = RangeObservable.create;
+Observable.range = staticRange;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let range: typeof staticRange;
+  }
+}

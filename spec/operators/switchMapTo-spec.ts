@@ -1,16 +1,30 @@
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
-declare const {hot, cold, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
+declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
 const Observable = Rx.Observable;
 
 /** @test {switchMapTo} */
 describe('Observable.prototype.switchMapTo', () => {
-  it('should switch a synchronous many outer to a synchronous many inner', (done: DoneSignature) => {
+  asDiagram('switchMapTo( 10\u2014\u201410\u2014\u201410\u2014| )')
+  ('should map-and-flatten each item to an Observable', () => {
+    const e1 =    hot('--1-----3--5-------|');
+    const e1subs =    '^                  !';
+    const e2 =   cold('x-x-x|              ', {x: 10});
+    const expected =  '--x-x-x-x-xx-x-x---|';
+    const values = {x: 10};
+
+    const result = e1.switchMapTo(e2);
+
+    expectObservable(result).toBe(expected, values);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+  });
+
+  it('should switch a synchronous many outer to a synchronous many inner', (done: MochaDone) => {
     const a = Observable.of(1, 2, 3);
     const expected = ['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c'];
     a.switchMapTo(Observable.of('a', 'b', 'c')).subscribe((x: string) => {
-      expect(x).toBe(expected.shift());
+      expect(x).to.equal(expected.shift());
     }, null, done);
   });
 
@@ -26,7 +40,7 @@ describe('Observable.prototype.switchMapTo', () => {
       })
     ).subscribe();
 
-    expect(unsubbed).toEqual(2);
+    expect(unsubbed).to.equal(2);
   });
 
   it('should switch to an inner cold observable', () => {

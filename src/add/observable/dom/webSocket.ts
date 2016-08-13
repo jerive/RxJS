@@ -1,7 +1,10 @@
-
 import {Observable} from '../../../Observable';
-import {WebSocketSubject} from '../../../observable/dom/WebSocketSubject';
+import {webSocket as staticWebSocket} from '../../../observable/dom/webSocket';
 
-Observable.webSocket = WebSocketSubject.create;
+Observable.webSocket = staticWebSocket;
 
-export var _void: void;
+declare module '../../../Observable' {
+  namespace Observable {
+    export let webSocket: typeof staticWebSocket;
+  }
+}

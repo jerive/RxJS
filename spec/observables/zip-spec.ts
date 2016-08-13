@@ -1,6 +1,6 @@
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
-declare const {hot, cold, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
+declare const {hot, cold, expectObservable, expectSubscriptions, type};
 
 declare const Symbol: any;
 
@@ -22,15 +22,15 @@ describe('Observable.zip', () => {
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
 
-  it('should zip the provided observables', (done: DoneSignature) => {
+  it('should zip the provided observables', (done: MochaDone) => {
     const expected = ['a1', 'b2', 'c3'];
     let i = 0;
 
     Observable.zip(
-      Observable.fromArray(['a', 'b', 'c']),
-      Observable.fromArray([1, 2, 3]), (a: string, b: number) => a + b)
+      Observable.from(['a', 'b', 'c']),
+      Observable.from([1, 2, 3]), (a: string, b: number) => a + b)
         .subscribe((x: string) => {
-          expect(x).toBe(expected[i++]);
+          expect(x).to.equal(expected[i++]);
         }, null, done);
   });
 
@@ -77,7 +77,7 @@ describe('Observable.zip', () => {
 
   describe('with iterables', () => {
     it('should zip them with values', () => {
-      const myIterator = {
+      const myIterator = <any>{
         count: 0,
         next: function () {
           return { value: this.count++, done: false };
@@ -103,7 +103,7 @@ describe('Observable.zip', () => {
 
     it('should only call `next` as needed', () => {
       let nextCalled = 0;
-      const myIterator = {
+      const myIterator = <any>{
         count: 0,
         next: () => {
           nextCalled++;
@@ -119,7 +119,7 @@ describe('Observable.zip', () => {
 
       // since zip will call `next()` in advance, total calls when
       // zipped with 3 other values should be 4.
-      expect(nextCalled).toBe(4);
+      expect(nextCalled).to.equal(4);
     });
 
     it('should work with never observable and empty iterable', () => {
@@ -565,14 +565,75 @@ describe('Observable.zip', () => {
     expectSubscriptions(b.subscriptions).toBe(bsubs);
   });
 
-  it('should combine an immediately-scheduled source with an immediately-scheduled second', (done: DoneSignature) => {
+  it('should combine an immediately-scheduled source with an immediately-scheduled second', (done: MochaDone) => {
     const a = Observable.of<number>(1, 2, 3, queueScheduler);
     const b = Observable.of<number>(4, 5, 6, 7, 8, queueScheduler);
     const r = [[1, 4], [2, 5], [3, 6]];
     let i = 0;
 
     Observable.zip(a, b).subscribe((vals: Array<number>) => {
-      (<any>expect(vals)).toDeepEqual(r[i++]);
+      expect(vals).to.deep.equal(r[i++]);
     }, null, done);
+  });
+
+  it('should support observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let b: Rx.Observable<string>;
+      let c: Rx.Observable<boolean>;
+      let o1: Rx.Observable<[number, string, boolean]> = Observable.zip(a, b, c);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support mixed observables and promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let b: Rx.Observable<string>;
+      let c: Promise<boolean>;
+      let d: Rx.Observable<string[]>;
+      let o1: Rx.Observable<[number, string, boolean, string[]]> = Observable.zip(a, b, c, d);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of promises', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>[];
+      let o1: Rx.Observable<number[]> = Observable.zip(a);
+      let o2: Rx.Observable<number[]> = Observable.zip(...a);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should support arrays of observables', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>[];
+      let o1: Rx.Observable<number[]> = Observable.zip(a);
+      let o2: Rx.Observable<number[]> = Observable.zip(...a);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single promise', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Promise<number>;
+      let o1: Rx.Observable<number[]> = Observable.zip(a);
+      /* tslint:enable:no-unused-variable */
+    });
+  });
+
+  it('should return Array<T> when given a single observable', () => {
+    type(() => {
+      /* tslint:disable:no-unused-variable */
+      let a: Rx.Observable<number>;
+      let o1: Rx.Observable<number[]> = Observable.zip(a);
+      /* tslint:enable:no-unused-variable */
+    });
   });
 });

@@ -1,12 +1,12 @@
+import {expect} from 'chai';
 import * as Rx from '../dist/cjs/Rx';
-import {DoneSignature} from './helpers/test-helper';
 
 const Observable = Rx.Observable;
 const Subscription = Rx.Subscription;
 
 /** @test {Subscription} */
 describe('Subscription', () => {
-  it('should not leak', (done: DoneSignature) => {
+  it('should not leak', (done: MochaDone) => {
     const tearDowns = [];
 
     const source1 = Observable.create((observer: Rx.Observer<any>) => {
@@ -33,13 +33,13 @@ describe('Subscription', () => {
     setTimeout(() => {
       expect(() => {
         subscription.unsubscribe();
-      }).toThrow(new Rx.UnsubscriptionError([new Error('oops, I am a bad unsubscribe!')]));
-      expect(tearDowns).toEqual([1, 2, 3]);
+      }).to.throw(Rx.UnsubscriptionError);
+      expect(tearDowns).to.deep.equal([1, 2, 3]);
       done();
     });
   });
 
-  it('should not leak when adding a bad custom subscription to a subscription', (done: DoneSignature) => {
+  it('should not leak when adding a bad custom subscription to a subscription', (done: MochaDone) => {
     const tearDowns = [];
 
     const sub = new Subscription();
@@ -55,7 +55,7 @@ describe('Subscription', () => {
         tearDowns.push(2);
         sub.add(<any>({
           unsubscribe: () => {
-            expect(sub.isUnsubscribed).toBe(true);
+            expect(sub.closed).to.be.true;
             throw new Error('Who is your daddy, and what does he do?');
           }
         }));
@@ -73,9 +73,88 @@ describe('Subscription', () => {
     setTimeout(() => {
       expect(() => {
         sub.unsubscribe();
-      }).toThrow(new Rx.UnsubscriptionError([new Error('Who is your daddy, and what does he do?')]));
-      expect(tearDowns).toEqual([1, 2, 3]);
+      }).to.throw(Rx.UnsubscriptionError);
+      expect(tearDowns).to.deep.equal([1, 2, 3]);
       done();
+    });
+  });
+
+  describe('Subscription.add()', () => {
+    it('Should returns the self if the self is passed', () => {
+      const sub = new Subscription();
+      const ret = sub.add(sub);
+
+      expect(ret).to.equal(sub);
+    });
+
+    it('Should returns Subscription.EMPTY if it is passed', () => {
+      const sub = new Subscription();
+      const ret = sub.add(Subscription.EMPTY);
+
+      expect(ret).to.equal(Subscription.EMPTY);
+    });
+
+    it('Should returns Subscription.EMPTY if it is called with `void` value', () => {
+      const sub = new Subscription();
+      const ret = sub.add(undefined);
+      expect(ret).to.equal(Subscription.EMPTY);
+    });
+
+    it('Should returns a new Subscription created with teardown function if it is passed a function', () => {
+      const sub = new Subscription();
+
+      let isCalled = false;
+      const ret = sub.add(function() {
+        isCalled = true;
+      });
+      ret.unsubscribe();
+
+      expect(isCalled).to.equal(true);
+    });
+
+    it('Should returns the passed one if passed a unsubscribed AnonymousSubscription', () => {
+      const sub = new Subscription();
+      const arg = {
+        isUnsubscribed: true,
+        unsubscribe: () => undefined,
+      };
+      const ret = sub.add(arg);
+
+      expect(ret).to.equal(arg);
+    });
+
+    it('Should returns the passed one if passed a AnonymousSubscription having not function `unsubscribe` member', () => {
+      const sub = new Subscription();
+      const arg = {
+        isUnsubscribed: false,
+        unsubscribe: undefined as any,
+      };
+      const ret = sub.add(arg as any);
+
+      expect(ret).to.equal(arg);
+    });
+
+    it('Should returns the passed one if the self has been unsubscribed', () => {
+      const main = new Subscription();
+      main.unsubscribe();
+
+      const child = new Subscription();
+      const ret = main.add(child);
+
+      expect(ret).to.equal(child);
+    });
+
+    it('Should unsubscribe the passed one if the self has been unsubscribed', () => {
+      const main = new Subscription();
+      main.unsubscribe();
+
+      let isCalled = false;
+      const child = new Subscription(() => {
+        isCalled = true;
+      });
+      main.add(child);
+
+      expect(isCalled).to.equal(true);
     });
   });
 });

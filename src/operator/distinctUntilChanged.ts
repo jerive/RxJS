@@ -3,6 +3,7 @@ import {Subscriber} from '../Subscriber';
 import {tryCatch} from '../util/tryCatch';
 import {errorObject} from '../util/errorObject';
 import {Observable} from '../Observable';
+import {TeardownLogic} from '../Subscription';
 
 /**
  * Returns an Observable that emits all items emitted by the source Observable that are distinct by comparison from the previous item.
@@ -27,11 +28,16 @@ class DistinctUntilChangedOperator<T, K> implements Operator<T, T> {
               private keySelector: (x: T) => K) {
   }
 
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new DistinctUntilChangedSubscriber(subscriber, this.compare, this.keySelector);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new DistinctUntilChangedSubscriber(subscriber, this.compare, this.keySelector));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class DistinctUntilChangedSubscriber<T, K> extends Subscriber<T> {
   private key: K;
   private hasKey: boolean = false;

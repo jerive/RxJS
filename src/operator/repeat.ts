@@ -2,6 +2,7 @@ import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
 import {Observable} from '../Observable';
 import {EmptyObservable} from '../observable/EmptyObservable';
+import {TeardownLogic} from '../Subscription';
 
 /**
  * Returns an Observable that repeats the stream of items emitted by the source Observable at most count times,
@@ -35,11 +36,16 @@ class RepeatOperator<T> implements Operator<T, T> {
   constructor(private count: number,
               private source: Observable<T>) {
   }
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new RepeatSubscriber(subscriber, this.count, this.source);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new RepeatSubscriber(subscriber, this.count, this.source));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class RepeatSubscriber<T> extends Subscriber<T> {
   constructor(destination: Subscriber<any>,
               private count: number,
@@ -56,7 +62,7 @@ class RepeatSubscriber<T> extends Subscriber<T> {
       }
       this.unsubscribe();
       this.isStopped = false;
-      this.isUnsubscribed = false;
+      this.closed = false;
       source.subscribe(this);
     }
   }

@@ -1,4 +1,4 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, time, expectObservable, expectSubscriptions};
 
 declare const rxTestScheduler: Rx.TestScheduler;
@@ -128,28 +128,6 @@ describe('Observable.prototype.windowCount', () => {
 
     expectObservable(result, unsub).toBe(expected, values);
     expectSubscriptions(source.subscriptions).toBe(subs);
-  });
-
-  it('should dispose window Subjects if the outer is unsubscribed early', () => {
-    const source = hot('--a--b--c--d--e--f--g--h--|');
-    const sourceSubs = '^        !                 ';
-    const expected =   'x---------                 ';
-    const x = cold(    '--a--b--c-                 ');
-    const unsub =      '         !                 ';
-    const late =  time('---------------|           ');
-    const values = { x: x };
-
-    let window;
-    const result = source.windowCount(10, 10)
-      .do((w: any) => { window = w; });
-
-    expectObservable(result, unsub).toBe(expected, values);
-    expectSubscriptions(source.subscriptions).toBe(sourceSubs);
-    rxTestScheduler.schedule(() => {
-      expect(() => {
-        window.subscribe();
-      }).toThrow(new Rx.ObjectUnsubscribedError());
-    }, late);
   });
 
   it('should not break unsubscription chains when result is unsubscribed explicitly', () => {

@@ -1,6 +1,6 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
 
 declare const rxTestScheduler: Rx.TestScheduler;
 const Observable = Rx.Observable;
@@ -15,7 +15,7 @@ describe('Observable.prototype.concat', () => {
     expectObservable(e1.concat(e2, rxTestScheduler)).toBe(expected);
   });
 
-  it('should work properly with scalar observables', (done: DoneSignature) => {
+  it('should work properly with scalar observables', (done: MochaDone) => {
     const results = [];
 
     const s1 = Observable
@@ -29,11 +29,11 @@ describe('Observable.prototype.concat', () => {
 
     s1.subscribe((x: number) => {
           results.push('Next: ' + x);
-        },
-        done.fail,
-        () => {
+        }, (x) => {
+          done(new Error('should not be called'));
+        }, () => {
           results.push('Completed');
-          expect(results).toEqual(['Next: 1', 'Next: 2', 'Completed']);
+          expect(results).to.deep.equal(['Next: 1', 'Next: 2', 'Completed']);
           done();
         }
       );

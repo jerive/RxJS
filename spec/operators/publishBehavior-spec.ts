@@ -1,6 +1,6 @@
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
 
 const Observable = Rx.Observable;
 
@@ -18,31 +18,9 @@ describe('Observable.prototype.publishBehavior', () => {
     published.connect();
   });
 
-  it('should follow the RxJS 4 behavior and NOT allow you to reconnect by subscribing again', (done: DoneSignature) => {
-    const expected = [0, 1, 2, 3, 4];
-    let i = 0;
-
-    const source = Observable.of(1, 2, 3, 4).publishBehavior(0);
-
-    source.subscribe(
-      (x: number) => {
-        expect(x).toBe(expected[i++]);
-      },
-      done.fail,
-      () => {
-        source.subscribe((x: any) => {
-          done.fail('should not be called');
-        }, done.fail, done);
-
-        source.connect();
-      });
-
-    source.connect();
-  });
-
   it('should return a ConnectableObservable', () => {
     const source = Observable.of(1).publishBehavior(1);
-    expect(source instanceof Rx.ConnectableObservable).toBe(true);
+    expect(source instanceof Rx.ConnectableObservable).to.be.true;
   });
 
   it('should only emit default value if connect is not called, despite subscriptions', () => {
@@ -217,7 +195,7 @@ describe('Observable.prototype.publishBehavior', () => {
     });
   });
 
-  it('should emit completed when subscribed after completed', (done: DoneSignature) => {
+  it('should emit completed when subscribed after completed', (done: MochaDone) => {
     const results1 = [];
     const results2 = [];
     let subscriptions = 0;
@@ -237,19 +215,21 @@ describe('Observable.prototype.publishBehavior', () => {
       results1.push(x);
     });
 
-    expect(results1).toEqual([0]);
-    expect(results2).toEqual([]);
+    expect(results1).to.deep.equal([0]);
+    expect(results2).to.deep.equal([]);
 
     connectable.connect();
 
-    expect(results1).toEqual([0, 1, 2, 3, 4]);
-    expect(results2).toEqual([]);
-    expect(subscriptions).toBe(1);
+    expect(results1).to.deep.equal([0, 1, 2, 3, 4]);
+    expect(results2).to.deep.equal([]);
+    expect(subscriptions).to.equal(1);
 
     connectable.subscribe(function (x) {
       results2.push(x);
-    }, done.fail, () => {
-      expect(results2).toEqual([]);
+    }, (x) => {
+      done(new Error('should not be called'));
+    }, () => {
+      expect(results2).to.deep.equal([]);
       done();
     });
   });
@@ -290,7 +270,7 @@ describe('Observable.prototype.publishBehavior', () => {
     published.connect();
   });
 
-  it('should multicast one observable to multiple observers', (done: DoneSignature) => {
+  it('should multicast one observable to multiple observers', (done: MochaDone) => {
     const results1 = [];
     const results2 = [];
     let subscriptions = 0;
@@ -309,23 +289,23 @@ describe('Observable.prototype.publishBehavior', () => {
       results1.push(x);
     });
 
-    expect(results1).toEqual([0]);
+    expect(results1).to.deep.equal([0]);
 
     connectable.connect();
 
-    expect(results2).toEqual([]);
+    expect(results2).to.deep.equal([]);
 
     connectable.subscribe((x: any) => {
       results2.push(x);
     });
 
-    expect(results1).toEqual([0, 1, 2, 3, 4]);
-    expect(results2).toEqual([4]);
-    expect(subscriptions).toBe(1);
+    expect(results1).to.deep.equal([0, 1, 2, 3, 4]);
+    expect(results2).to.deep.equal([4]);
+    expect(subscriptions).to.equal(1);
     done();
   });
 
-  it('should follow the RxJS 4 behavior and emit nothing to observer after completed', (done: DoneSignature) => {
+  it('should follow the RxJS 4 behavior and emit nothing to observer after completed', (done: MochaDone) => {
     const results = [];
 
     const source = new Observable((observer: Rx.Observer<number>) => {
@@ -344,7 +324,7 @@ describe('Observable.prototype.publishBehavior', () => {
       results.push(x);
     });
 
-    expect(results).toEqual([]);
+    expect(results).to.deep.equal([]);
     done();
   });
 });

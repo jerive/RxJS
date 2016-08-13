@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {NeverObservable} from '../../observable/NeverObservable';
+import {never as staticNever} from '../../observable/never';
 
-Observable.never = NeverObservable.create;
+Observable.never = staticNever;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let never: typeof staticNever;
+  }
+}

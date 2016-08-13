@@ -89,7 +89,7 @@ enabling "composite" subscription behavior.
 |`manySelect`|`-`|
 |`maxBy`|`-`|
 |`minBy`|`-`|
-|`onErrorResumeNext`|`-`|
+|`ofObjectChanges`|`-`|
 |`pausable`|`-`|
 |`pausableBuffered`|`-`|
 |`shareReplay`|`-`|
@@ -219,9 +219,35 @@ To reduce polymorphism and get better performance out of operators, some operato
 </table>
 
 
+## Operator Interface Changes
+
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>RxJS 4</th>
+      <th>RxJS 5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>distinctUntilChanged</code></td>
+      <td><code>distinctUntilChanged(keySelector: function, comparer: function)</code></td>
+      <td><code>distinctUntilChanged<T, K>(compare?: (x: K, y: K) => boolean, keySelector?: (x: T) => K): Observable<T></code></td>
+    </tr>
+  </tbody>
+</table>
+
+
+## Default Scheduling Changed
+
+RxJS v4 defaulted to a scheduler called `Rx.Scheduler.asap` which schedules on the micro task queue. RxJS v5 however defaults to having no scheduler at all; v4 called this `Rx.Scheduler.immediate`. This was done to increase performance for the most common use cases.
+
+
 ## Schedulers Renamed
 
-The names of the Schedulers in RxJS 4 were based off of the Rx.NET implentation. Consequently, some of the names
+The names of the Schedulers in RxJS 4 were based off of the Rx.NET implementation. Consequently, some of the names
 didn't make sense in a JavaScript context (for example: `currentThread` when there's only one thread anyhow).
 
 |RxJS 4|RxJS 5||

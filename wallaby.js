@@ -1,6 +1,5 @@
 module.exports = wallaby => ({
   files: [
-    'index.js',
     'src/**/*.ts',
     {pattern: 'spec/helpers/*.ts', instrument: false}
   ],
@@ -14,9 +13,12 @@ module.exports = wallaby => ({
       preserveConstEnums: true,
     })
   },
-
-  testFramework: 'jasmine',
-
+  
+  testFramework: {
+    type: 'mocha',
+    path: 'mocha'
+  },
+  
   env: {
     type: 'node'
   },
@@ -25,9 +27,9 @@ module.exports = wallaby => ({
 
   bootstrap: function (w) {
     // Remapping all require calls to `dist/cjs` right to `src`
-    var Module = require('module').Module;
+    const Module = require('module').Module;
     if (!Module._originalRequire) {
-      var modulePrototype = Module.prototype;
+      const modulePrototype = Module.prototype;
       Module._originalRequire = modulePrototype.require;
       modulePrototype.require = function (filePath) {
         return Module._originalRequire.call(this, filePath.replace('dist/cjs', 'src'));
@@ -35,7 +37,20 @@ module.exports = wallaby => ({
     }
 
     // Global test helpers
+    global.mocha = require('mocha');
+    global.Suite = global.mocha.Suite;
+    global.Test = global.mocha.Test;
     require('./spec/helpers/test-helper');
     require('./spec/helpers/ajax-helper');
+
+    //delete global context due to avoid issue by reusing process
+    //https://github.com/wallabyjs/public/issues/536
+    if (global.asDiagram) {
+      delete global.asDiagram;
+    }
+
+    const mocha = wallaby.testFramework;
+    const path = require('path');
+    mocha.ui(path.resolve(w.projectCacheDir, 'spec/helpers/testScheduler-ui'));
   }
 });

@@ -7,6 +7,11 @@ import {SubscriptionLog} from './SubscriptionLog';
 import {SubscriptionLoggable} from './SubscriptionLoggable';
 import {applyMixins} from '../util/applyMixins';
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 export class HotObservable<T> extends Subject<T> implements SubscriptionLoggable {
   public subscriptions: SubscriptionLog[] = [];
   scheduler: Scheduler;
@@ -19,7 +24,7 @@ export class HotObservable<T> extends Subject<T> implements SubscriptionLoggable
     this.scheduler = scheduler;
   }
 
-  protected _subscribe(subscriber: Subscriber<any>): Subscription | Function | void {
+  protected _subscribe(subscriber: Subscriber<any>): Subscription {
     const subject: HotObservable<T> = this;
     const index = subject.logSubscribedFrame();
     subscriber.add(new Subscription(() => {
@@ -45,4 +50,3 @@ export class HotObservable<T> extends Subject<T> implements SubscriptionLoggable
   }
 }
 applyMixins(HotObservable, [SubscriptionLoggable]);
-

@@ -1,9 +1,10 @@
-import {asap} from '../scheduler/asap';
+import {async} from '../scheduler/async';
 import {isDate} from '../util/isDate';
 import {Operator} from '../Operator';
 import {Subscriber} from '../Subscriber';
 import {Scheduler} from '../Scheduler';
 import {Observable} from '../Observable';
+import {TeardownLogic} from '../Subscription';
 
 /**
  * @param due
@@ -15,7 +16,7 @@ import {Observable} from '../Observable';
  */
 export function timeout<T>(due: number | Date,
                            errorToSend: any = null,
-                           scheduler: Scheduler = asap): Observable<T> {
+                           scheduler: Scheduler = async): Observable<T> {
   let absoluteTimeout = isDate(due);
   let waitFor = absoluteTimeout ? (+due - scheduler.now()) : Math.abs(<number>due);
   return this.lift(new TimeoutOperator(waitFor, absoluteTimeout, errorToSend, scheduler));
@@ -32,13 +33,18 @@ class TimeoutOperator<T> implements Operator<T, T> {
               private scheduler: Scheduler) {
   }
 
-  call(subscriber: Subscriber<T>) {
-    return new TimeoutSubscriber<T>(
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new TimeoutSubscriber<T>(
       subscriber, this.absoluteTimeout, this.waitFor, this.errorToSend, this.scheduler
-    );
+    ));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 class TimeoutSubscriber<T> extends Subscriber<T> {
   private index: number = 0;
   private _previousIndex: number = 0;

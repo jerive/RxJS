@@ -1,4 +1,5 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, time, expectObservable, expectSubscriptions};
 
 declare const rxTestScheduler: Rx.TestScheduler;
@@ -51,7 +52,7 @@ describe('Observable.prototype.windowToggle', () => {
     const values = { x: x, y: y, z: z };
 
     const source = e1.windowToggle(e2, (value: string) => {
-      expect(value).toBe('x');
+      expect(value).to.equal('x');
       return e3;
     });
 
@@ -217,7 +218,7 @@ describe('Observable.prototype.windowToggle', () => {
     rxTestScheduler.schedule(() => {
       expect(() => {
         window.subscribe();
-      }).toThrow(new Rx.ObjectUnsubscribedError());
+      }).to.throw(Rx.ObjectUnsubscribedError);
     }, late);
   });
 
@@ -404,6 +405,24 @@ describe('Observable.prototype.windowToggle', () => {
 
     expectObservable(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(subs);
+    expectSubscriptions(e1.subscriptions).toBe(e1subs);
+    expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it ('should handle empty closing observable', () => {
+    const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
+    const e1subs =      '^                                  !';
+    const e2 = cold(    '---o---------------o-----------|    ');
+    const e2subs =      '^                              !    ';
+    const e3 =  Observable.empty();
+    const expected =    '---x---------------y---------------|';
+    const x = cold(        '|');
+    const y = cold(                        '|');
+    const values = { x: x, y: y };
+
+    const result = e1.windowToggle(e2, () => e3);
+
+    expectObservable(result).toBe(expected, values);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });

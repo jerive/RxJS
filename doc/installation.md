@@ -1,6 +1,6 @@
 ## ES6 via npm
 
-```sh
+```none
 npm install rxjs-es
 ```
 
@@ -32,7 +32,7 @@ Observable.of(1,2,3)::map(x => x + '!!!'); // etc
 
 ## CommonJS via npm
 
-```sh
+```none
 npm install rxjs
 ```
 
@@ -65,17 +65,28 @@ map.call(Observable.of(1,2,3), function (x) { return x + '!!!'; });
 
 You can also use the above method to build your own Observable and export it from your own module.
 
+### CommonJS with TypeScript
+If you recieve an error like `error TS2304: Cannot find name 'Promise'` or `error TS2304: Cannot find name 'Iterable'` when using RxJS you may need to install a supplemental set of typings.
+
+1. For [`typings`](https://github.com/typings/typings) users:
+
+    `typings install es6-shim --ambient`
+
+2. If you're not using typings the interfaces can be copied from [/es6-shim/es6-shim.d.ts](https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/es6-shim/es6-shim.d.ts).
+
+3. Add type definition file included in `tsconfig.json` or CLI argument.
+
 ## All Module Types (CJS/ES6/AMD/TypeScript) via npm
 
 To install this library via [npm](https://www.npmjs.org) **version 3**, use the following command:
 
-```sh
+```none
 npm install @reactivex/rxjs
 ```
 
 If you are using npm **version 2** before this library has achieved a stable version, you need to specify the library version explicitly:
 
-```sh
+```none
 npm install @reactivex/rxjs@5.0.0-beta.1
 ```
 
@@ -84,4 +95,8 @@ npm install @reactivex/rxjs@5.0.0-beta.1
 For CDN, you can use [npmcdn](https://npmcdn.com). Just replace `version` with the current
 version on the link below:
 
+For RxJS 5.0.0-beta.1 through beta.11:
 https://npmcdn.com/@reactivex/rxjs@version/dist/global/Rx.umd.js
+
+For RxJS 5.0.0-beta.12 and higher:
+https://npmcdn.com/@reactivex/rxjs@version/dist/global/Rx.js

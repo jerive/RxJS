@@ -1,20 +1,20 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
 declare const rxTestScheduler: Rx.TestScheduler;
 
 /** @test {delayWhen} */
 describe('Observable.prototype.delayWhen', () => {
-  asDiagram('delay(durationSelector)')('should delay by duration selector', () => {
+  asDiagram('delayWhen(durationSelector)')('should delay by duration selector', () => {
     const e1 =        hot('---a---b---c--|');
     const expected =      '-----a------c----(b|)';
     const subs =          '^                !';
     const selector = [cold(  '--x--|'),
-                    cold(      '----------x-|'),
-                    cold(          '-x--|')];
+                      cold(      '----------(x|)'),
+                      cold(          '-x--|')];
     const selectorSubs = ['   ^ !            ',
-                        '       ^         !',
-                        '           ^!     '];
+                          '       ^         !',
+                          '           ^!     '];
 
     let idx = 0;
     function durationSelector(x) {

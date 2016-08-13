@@ -1,3 +1,4 @@
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
 
@@ -38,7 +39,7 @@ describe('Observable.prototype.bufferToggle', () => {
     const innerVals = ['x', 'y', 'z'];
 
     expectObservable(e1.bufferToggle(e2, (x: string) => {
-      expect(x).toBe(innerVals.shift());
+      expect(x).to.equal(innerVals.shift());
       return e3;
     })).toBe(expected, values);
   });
@@ -340,5 +341,98 @@ describe('Observable.prototype.bufferToggle', () => {
     expectObservable(result).toBe(expected);
     expectSubscriptions(e1.subscriptions).toBe(e1subs);
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
+  });
+
+  it('should accept openings resolved promise', (done: MochaDone) => {
+    const e1 = Observable.concat(
+      Observable.timer(10).mapTo(1),
+      Observable.timer(100).mapTo(2),
+      Observable.timer(150).mapTo(3),
+      Observable.timer(200).mapTo(4));
+
+    const expected = [[1]];
+
+    e1.bufferToggle(new Promise((resolve: any) => { resolve(42); }), () => {
+      return Observable.timer(50);
+    }).subscribe((x) => {
+      expect(x).to.deep.equal(expected.shift());
+    }, (x) => {
+      done(new Error('should not be called'));
+    }, () => {
+      expect(expected.length).to.be.equal(0);
+      done();
+    });
+  });
+
+  it('should accept openings rejected promise', (done: MochaDone) => {
+    const e1 = Observable.concat(Observable.of(1),
+      Observable.timer(10).mapTo(2),
+      Observable.timer(10).mapTo(3),
+      Observable.timer(100).mapTo(4)
+      );
+
+    const expected = 42;
+
+    e1.bufferToggle(new Promise((resolve: any, reject: any) => { reject(expected); }), () => {
+      return Observable.timer(50);
+    }).subscribe((x) => {
+      done(new Error('should not be called'));
+    }, (x) => {
+      expect(x).to.equal(expected);
+      done();
+    }, () => {
+      done(new Error('should not be called'));
+    });
+  });
+
+  it('should accept closing selector that returns a resolved promise', (done: MochaDone) => {
+    const e1 = Observable.concat(Observable.of(1),
+      Observable.timer(10).mapTo(2),
+      Observable.timer(10).mapTo(3),
+      Observable.timer(100).mapTo(4)
+      );
+    const expected = [[1]];
+
+    e1.bufferToggle(Observable.of(10), () => new Promise((resolve: any) => { resolve(42); }))
+      .subscribe((x) => {
+        expect(x).to.deep.equal(expected.shift());
+      }, () => {
+        done(new Error('should not be called'));
+      }, () => {
+        expect(expected.length).to.be.equal(0);
+        done();
+      });
+  });
+
+  it('should accept closing selector that returns a rejected promise', (done: MochaDone) => {
+    const e1 = Observable.concat(Observable.of(1),
+      Observable.timer(10).mapTo(2),
+      Observable.timer(10).mapTo(3),
+      Observable.timer(100).mapTo(4)
+      );
+
+    const expected = 42;
+
+    e1.bufferToggle(Observable.of(10), () => new Promise((resolve: any, reject: any) => { reject(expected); }))
+      .subscribe((x) => {
+        done(new Error('should not be called'));
+      }, (x) => {
+        expect(x).to.equal(expected);
+        done();
+      }, () => {
+        done(new Error('should not be called'));
+      });
+  });
+
+  it('should handle empty closing observable', () => {
+    const e1 = hot('--a--^---b---c---d---e---f---g---h------|');
+    const subs =        '^                                  !';
+    const e2 =     cold('--x-----------y--------z---|        ');
+    const expected =    '--l-----------m--------n-----------|';
+
+    const result = e1.bufferToggle(e2, () => Observable.empty());
+
+    expectObservable(result).toBe(expected, {l: [], m: [], n: []});
+    expectSubscriptions(e1.subscriptions).toBe(subs);
   });
 });

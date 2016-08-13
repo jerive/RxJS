@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {DeferObservable} from '../../observable/DeferObservable';
+import {defer as staticDefer} from '../../observable/defer';
 
-Observable.defer = DeferObservable.create;
+Observable.defer = staticDefer;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let defer: typeof staticDefer;
+  }
+}

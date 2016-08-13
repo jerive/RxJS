@@ -22,19 +22,19 @@ cache:
 env:
   global:
   - CXX=g++-4.8
-  - alias jasmine=./node_modules/.bin/jasmine
   - alias tsc=./node_modules/.bin/tsc
+  - alias grunt=./node_modules/grunt-cli/bin/grunt
 
 before_install:
-  - npm install -g npm@3
+  - npm install -g npm@3 && npm install grunt@0.4.1 grunt-cli grunt-contrib-connect grunt-run
 install:
   - npm install && npm run lint
 
 script:
-  - npm test && node ./node_modules/markdown-doctest/bin/cmd.js
+  - npm run build_spec && npm run test_mocha && node ./node_modules/markdown-doctest/bin/cmd.js
   - npm run check_circular_dependencies
-  - npm run cover
-  - cat ./coverage/coverage-remapped.lcov | ./node_modules/coveralls/bin/coveralls.js
 
 after_success:
-  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ -n "${SAUCE_ACCESS_KEY}" ] && npm run test_karma || false'
+  - npm run cover
+  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+  - '[ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ -n "${SAUCE_ACCESS_KEY}" ] && npm run build_spec_browser && grunt --gruntfile spec/support/mocha.sauce.gruntfile.js || false'

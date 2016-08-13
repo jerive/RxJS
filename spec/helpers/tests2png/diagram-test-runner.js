@@ -1,16 +1,6 @@
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 5000;
-
 var root = require('../../../dist/cjs/util/root').root;
-var Rx = require('../../../dist/cjs/Rx.KitchenSink');
-var marbleHelpers = require('../marble-testing');
+var Rx = require('../../../dist/cjs/Rx');
 var painter = require('./painter');
-
-global.rxTestScheduler = null;
-global.cold = marbleHelpers.cold;
-global.hot = marbleHelpers.hot;
-global.time = marbleHelpers.time;
-global.expectObservable = marbleHelpers.expectObservable;
-global.expectSubscriptions = marbleHelpers.expectSubscriptions;
 
 function getInputStreams(rxTestScheduler) {
   return Array.prototype.concat.call([],
@@ -72,19 +62,20 @@ function makeFilename(operatorLabel) {
   return /^(\w+)/.exec(operatorLabel)[1] + '.png';
 }
 
-var glit = global.it;
-
-global.it = function (description, specFn, timeout) { };
-
-global.asDiagram = function asDiagram(operatorLabel) {
+global.asDiagram = function asDiagram(operatorLabel, glit) {
   return function specFnWithPainter(description, specFn) {
     if (specFn.length === 0) {
       glit(description, function () {
         var outputStreams = [];
         global.rxTestScheduler = new Rx.TestScheduler(function (actual) {
-          if (Array.isArray(actual) && typeof actual[0].frame === 'number') {
+          if (Array.isArray(actual) && actual.length > 0 && typeof actual[0].frame === 'number') {
             outputStreams.push({
               messages: actual.map(postProcessOutputMessage),
+              subscription: {start: 0, end: '100%'}
+            });
+          } else if (Array.isArray(actual) && actual.length === 0) { // is the never Observable
+            outputStreams.push({
+              messages: [],
               subscription: {start: 0, end: '100%'}
             });
           }
@@ -99,60 +90,7 @@ global.asDiagram = function asDiagram(operatorLabel) {
         console.log('Painted ' + filename);
       });
     } else {
-      throw new Error('Cannot generate PNG marble diagram for async test ' + description);
+      throw new Error('cannot generate PNG marble diagram for async test ' + description);
     }
   };
-};
-
-beforeEach(function () {
-  jasmine.addMatchers({
-    toDeepEqual: function (util, customEqualityTesters) {
-      return {
-        compare: function (actual, expected) {
-          return { pass: true };
-        }
-      };
-    }
-  });
-});
-
-afterEach(function () {
-  global.rxTestScheduler = null;
-});
-
-(function () {
-  Object.defineProperty(Error.prototype, 'toJSON', {
-    value: function () {
-      var alt = {};
-
-      Object.getOwnPropertyNames(this).forEach(function (key) {
-        if (key !== 'stack') {
-          alt[key] = this[key];
-        }
-      }, this);
-      return alt;
-    },
-    configurable: true
-  });
-
-  global.__root__ = root;
-})();
-
-global.lowerCaseO = function lowerCaseO() {
-  var values = [].slice.apply(arguments);
-
-  var o = {
-    subscribe: function (observer) {
-      values.forEach(function (v) {
-        observer.next(v);
-      });
-      observer.complete();
-    }
-  };
-
-  o[Symbol.observable] = function () {
-    return this;
-  };
-
-  return o;
 };

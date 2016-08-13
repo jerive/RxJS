@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {IntervalObservable} from '../../observable/IntervalObservable';
+import {interval as staticInterval} from '../../observable/interval';
 
-Observable.interval = IntervalObservable.create;
+Observable.interval = staticInterval;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let interval: typeof staticInterval;
+  }
+}

@@ -1,6 +1,10 @@
 import {Observable} from '../../Observable';
-import {UsingObservable} from '../../observable/UsingObservable';
+import {using as staticUsing} from '../../observable/using';
 
-Observable.using = UsingObservable.create;
+Observable.using = staticUsing;
 
-export var _void: void;
+declare module '../../Observable' {
+  namespace Observable {
+    export let using: typeof staticUsing;
+  }
+}

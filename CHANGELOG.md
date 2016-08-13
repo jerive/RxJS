@@ -1,3 +1,221 @@
+<a name="5.0.0-beta.11"></a>
+# [5.0.0-beta.11](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.10...v5.0.0-beta.11) (2016-08-09)
+
+
+### Bug Fixes
+
+* **ajaxObservable:** only set default Content-Type header when no body is sent (#1830) ([5a895e8](https://github.com/ReactiveX/RxJS/commit/5a895e8))
+* **AjaxObservable:** drop resultSelector support in ajax method ([7a77437](https://github.com/ReactiveX/RxJS/commit/7a77437)), closes [#1783](https://github.com/ReactiveX/RxJS/issues/1783)
+* **AsyncSubject:** do not allow change value after complete ([801f282](https://github.com/ReactiveX/RxJS/commit/801f282)), closes [#1800](https://github.com/ReactiveX/RxJS/issues/1800)
+* **BoundNodeCallbackObservable:**  cast to `any` to access to private field in `source` ([54f342f](https://github.com/ReactiveX/RxJS/commit/54f342f))
+* **catch:** accept selector returns ObservableInput ([e55c62d](https://github.com/ReactiveX/RxJS/commit/e55c62d)), closes [#1857](https://github.com/ReactiveX/RxJS/issues/1857)
+* **combineLatest:** emit unique array instances with the default projection ([2e30fd1](https://github.com/ReactiveX/RxJS/commit/2e30fd1))
+* **Observable.from:** standardise arguments (remove map/context) ([aa30af2](https://github.com/ReactiveX/RxJS/commit/aa30af2))
+* **schedulers:** fix asap and animationFrame schedulers to execute across async boundaries. (#182 ([548ec2a](https://github.com/ReactiveX/RxJS/commit/548ec2a)), closes [(#1820](https://github.com/(/issues/1820) [#1814](https://github.com/ReactiveX/RxJS/issues/1814)
+* **subscribeToResult:** update subscription to iterables ([5d6339a](https://github.com/ReactiveX/RxJS/commit/5d6339a))
+* **WebSocketSubject:** prevent early close (#1831) ([848a527](https://github.com/ReactiveX/RxJS/commit/848a527)), closes [(#1831](https://github.com/(/issues/1831)
+
+### Features
+
+* **fromEvent:** Pass through event listener options (#1845) ([8f0dc01](https://github.com/ReactiveX/RxJS/commit/8f0dc01))
+* **PairsObservable:** add PairsObservable creation method ([26bafff](https://github.com/ReactiveX/RxJS/commit/26bafff)), closes [#1804](https://github.com/ReactiveX/RxJS/issues/1804)
+
+
+### BREAKING CHANGES
+
+* Observable.from: - Observable.from no longer supports the optional map function and associated context argument.
+This change has been reflected in the related constructors and their properties have been standardised.
+* AjaxObservable: ajax.*() method no longer support resultSelector, encourage to use `map` instead
+
+
+
+<a name="5.0.0-beta.10"></a>
+# [5.0.0-beta.10](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.9...v5.0.0-beta.10) (2016-07-06)
+
+
+### Bug Fixes
+
+* **AjaxObservable:** ignore content-type for formdata (#1746) ([43d05e7](https://github.com/ReactiveX/RxJS/commit/43d05e7))
+* **AjaxObservable:** support withCredentials for CORS request ([8084572](https://github.com/ReactiveX/RxJS/commit/8084572)), closes [#1732](https://github.com/ReactiveX/RxJS/issues/1732) [#1711](https://github.com/ReactiveX/RxJS/issues/1711)
+* **babel:** fix an issue where babel could not compile `Scheduler.async` (#1807) ([12c5c74](https://github.com/ReactiveX/RxJS/commit/12c5c74)), closes [(#1807](https://github.com/(/issues/1807) [#1806](https://github.com/ReactiveX/RxJS/issues/1806)
+* **bufferTime:** handle closing context when synchronously unsubscribed ([4ce4433](https://github.com/ReactiveX/RxJS/commit/4ce4433)), closes [#1763](https://github.com/ReactiveX/RxJS/issues/1763)
+* **multicast:** Fixes multicast with selector to create a new source connection per subscriber.  ([c3ac852](https://github.com/ReactiveX/RxJS/commit/c3ac852)), closes [(#1774](https://github.com/(/issues/1774)
+* **Subject:** allow optional next value in type definition ([3e0c6d9](https://github.com/ReactiveX/RxJS/commit/3e0c6d9)), closes [#1728](https://github.com/ReactiveX/RxJS/issues/1728)
+* **WebSocketSubject:** respect WebSockeCtor, support source/destination arguments in constructor. (#179 ([cd8cdd0](https://github.com/ReactiveX/RxJS/commit/cd8cdd0)), closes [#1745](https://github.com/ReactiveX/RxJS/issues/1745) [#1784](https://github.com/ReactiveX/RxJS/issues/1784)
+
+
+
+<a name="5.0.0-beta.9"></a>
+# [5.0.0-beta.9](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.8...v5.0.0-beta.9) (2016-06-14)
+
+
+### Bug Fixes
+
+* **cache:** get correct caching behavior (#1765) ([cb0b806](https://github.com/ReactiveX/RxJS/commit/cb0b806)), closes [#1628](https://github.com/ReactiveX/RxJS/issues/1628)
+* **ConnectableObservable:** fix ConnectableObservable connection handling issue ([41ce80c](https://github.com/ReactiveX/RxJS/commit/41ce80c))
+* **typings:** make HotObservavle._subscribe protected ([1c3d6ea](https://github.com/ReactiveX/RxJS/commit/1c3d6ea))
+* **WebSocketSubject:** WebSocketSubject will now chain operators properly (#1752) ([bf54db4](https://github.com/ReactiveX/RxJS/commit/bf54db4)), closes [#1745](https://github.com/ReactiveX/RxJS/issues/1745)
+* **window:** don't track internal window subjects as subscriptions. ([f3357b9](https://github.com/ReactiveX/RxJS/commit/f3357b9))
+
+### Performance Improvements
+
+* **fromEventPattern:** ~3x improvement in speed ([3dc1c00](https://github.com/ReactiveX/RxJS/commit/3dc1c00))
+
+
+
+<a name="5.0.0-beta.8"></a>
+# [5.0.0-beta.8](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.7...v5.0.0-beta.8) (2016-05-22)
+
+
+### Bug Fixes
+
+* **AnonymousSubject:** allow anonymous observers as destination ([0e2c28b](https://github.com/ReactiveX/RxJS/commit/0e2c28b))
+* **combineLatest:** rxjs/observable/combineLatest is now properly exported ([21fab73](https://github.com/ReactiveX/RxJS/commit/21fab73)), closes [#1722](https://github.com/ReactiveX/RxJS/issues/1722)
+* **ConnectableObservable:** fix race conditions in ConnectableObservable and refCount. ([d1412bc](https://github.com/ReactiveX/RxJS/commit/d1412bc))
+* **Rx:** remove kitchenSink and DOM, let Rx export all ([f5090b4](https://github.com/ReactiveX/RxJS/commit/f5090b4)), closes [#1650](https://github.com/ReactiveX/RxJS/issues/1650)
+* **ScalarObservable:** set _isScalar to false when initialized with a scheduler ([5037b3a](https://github.com/ReactiveX/RxJS/commit/5037b3a))
+* **Subject:** correct Subject behaviors to be more like Rx4 ([ba9ef2b](https://github.com/ReactiveX/RxJS/commit/ba9ef2b))
+* **subscriptions:** fixes bug that tracked subscriber subscriptions twice. ([29ff794](https://github.com/ReactiveX/RxJS/commit/29ff794))
+
+### Features
+
+* **bufferTime:** add `maxBufferSize` optional argument ([cf45540](https://github.com/ReactiveX/RxJS/commit/cf45540)), closes [#1295](https://github.com/ReactiveX/RxJS/issues/1295)
+* **multicast:** subjectfactory allows selectors ([32fa3a4](https://github.com/ReactiveX/RxJS/commit/32fa3a4))
+* **onErrorResumeNext:** add onErrorResumeNext operator ([51e022b](https://github.com/ReactiveX/RxJS/commit/51e022b)), closes [#1665](https://github.com/ReactiveX/RxJS/issues/1665)
+* **publish:** support optional selectors ([0e5991d](https://github.com/ReactiveX/RxJS/commit/0e5991d)), closes [#1629](https://github.com/ReactiveX/RxJS/issues/1629)
+
+### Performance Improvements
+
+* **combineLatest:** avoid splice and indexOf ([33599cd](https://github.com/ReactiveX/RxJS/commit/33599cd))
+
+
+### BREAKING CHANGES
+
+* Subject: Subjects no longer duck-type as Subscriptions
+* Subject: Subjects will no longer throw when re-subscribed to if they are not unsubscribed
+* Subject: Subjects no longer automatically unsubscribe when completed or errored
+BREAKING CAHNGE: Minor scheduling changes to groupBy to ensure proper emission ordering
+* Rx: `Rx.kitchenSink` and `Rx.DOM` are removed, `Rx`
+export everything.
+
+
+
+<a name="5.0.0-beta.7"></a>
+# [5.0.0-beta.7](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.6...v5.0.0-beta.7) (2016-04-27)
+
+
+### Bug Fixes
+
+* **race:** handle observables completes immediately ([abac3d1](https://github.com/ReactiveX/RxJS/commit/abac3d1)), closes [#1615](https://github.com/ReactiveX/RxJS/issues/1615)
+* **scan:** accumulator passes current index ([a3ec896](https://github.com/ReactiveX/RxJS/commit/a3ec896)), closes [#1614](https://github.com/ReactiveX/RxJS/issues/1614)
+
+### Features
+
+* **Observable.generate:** add generate static creation method ([c03434c](https://github.com/ReactiveX/RxJS/commit/c03434c))
+
+
+
+<a name="5.0.0-beta.6"></a>
+# [5.0.0-beta.6](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.5...v5.0.0-beta.6) (2016-04-12)
+
+
+### Bug Fixes
+
+* **AjaxObservable:** support json responseType on IE ([bba13d8](https://github.com/ReactiveX/RxJS/commit/bba13d8)), closes [#1381](https://github.com/ReactiveX/RxJS/issues/1381)
+* **bufferToggle:** accepts closing selector returns promise ([b1c575c](https://github.com/ReactiveX/RxJS/commit/b1c575c))
+* **bufferToggle:** accepts promise as openings ([3d22c7a](https://github.com/ReactiveX/RxJS/commit/3d22c7a))
+* **bufferToggle:** handle closingSelector completes immediately ([02239fb](https://github.com/ReactiveX/RxJS/commit/02239fb))
+* **typings:** explictly export typings for arguments to functions that destructure configuration objects ([ef305af](https://github.com/ReactiveX/RxJS/commit/ef305af))
+
+### Features
+
+* **UnsubscriptionError:** add messages from inner errors to output message ([dd01279](https://github.com/ReactiveX/RxJS/commit/dd01279)), closes [#1590](https://github.com/ReactiveX/RxJS/issues/1590)
+
+### Performance Improvements
+
+* **DeferSubscriber:** split up 'tryDefer()' into a method to call a factory function. ([566f46b](https://github.com/ReactiveX/RxJS/commit/566f46b))
+
+
+
+<a name="5.0.0-beta.5"></a>
+# [5.0.0-beta.5](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.4...v5.0.0-beta.5) (2016-04-05)
+
+
+### Bug Fixes
+
+* **take:** make 'take' unsubscribe when it reaches the total ([9858aa3](https://github.com/ReactiveX/RxJS/commit/9858aa3))
+
+### BREAKING CHANGES
+
+* Operator: `Operator.prototype.call` has been refactored to include both the destination Subscriber, and the source Observable
+  the Operator is now responsible for describing it's own subscription process. ([26423f4](https://github.com/ReactiveX/rxjs/pull/1570/commits/26423f4))
+
+<a name="5.0.0-beta.4"></a>
+# [5.0.0-beta.4](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.3...v5.0.0-beta.4) (2016-03-29)
+
+
+### Bug Fixes
+
+* **AjaxObservable:** enhance compatibility ([0ac7e1e](https://github.com/ReactiveX/RxJS/commit/0ac7e1e))
+* **Observable.if:** accept promise as source ([147166e](https://github.com/ReactiveX/RxJS/commit/147166e))
+* **mergeMap:** allow concurrent to be set as the second argument for mergeMap and mergeMapTo ([c003468](https://github.com/ReactiveX/RxJS/commit/c003468))
+* **observable:** ensure the subscriber chain is complete before calling this._subscribe ([1631224](https://github.com/ReactiveX/RxJS/commit/1631224))
+* **Symbol:** fixed issue where $$observable is not defined ([e66b2d8](https://github.com/ReactiveX/RxJS/commit/e66b2d8))
+* **Observable.using:** accepts factory returns promise ([f8d7d1b](https://github.com/ReactiveX/RxJS/commit/f8d7d1b))
+* **windowToggle:** handle closingSelector completes immediately ([c755587](https://github.com/ReactiveX/RxJS/commit/c755587)), closes [#1487](https://github.com/ReactiveX/RxJS/issues/1487)
+
+### Features
+
+* **ajax:** add FormData support in AjaxObservable and add percent encoding for parameters ([1f6119c](https://github.com/ReactiveX/RxJS/commit/1f6119c))
+* **Subscription:** `add()` now returns a Subscription reference ([a3f4552](https://github.com/ReactiveX/RxJS/commit/a3f4552))
+* **timestamp:** add timestamp operator ([80b1646](https://github.com/ReactiveX/RxJS/commit/80b1646)), closes [#1515](https://github.com/ReactiveX/RxJS/issues/1515)
+
+### Performance Improvements
+
+* **forkJoin:** improve forkJoin perf slightly by removing unnecessary context tracking ([280b985](https://github.com/ReactiveX/RxJS/commit/280b985))
+
+
+### BREAKING CHANGES
+
+* Observable: `Observable.fromArray` was removed since it's deprecated on RxJS 4. You should use `Observable.from` instead.
+
+
+
+<a name="5.0.0-beta.3"></a>
+# [5.0.0-beta.3](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.2...v5.0.0-beta.3) (2016-03-21)
+
+
+### Bug Fixes
+
+* **AjaxObservable:** update type definition for AjaxObservable ([3f5c269](https://github.com/ReactiveX/RxJS/commit/3f5c269)), closes [#1382](https://github.com/ReactiveX/RxJS/issues/1382)
+* **deferObservable:** accepts factory returns promise ([0cb44e1](https://github.com/ReactiveX/RxJS/commit/0cb44e1))
+* **do:** fix do operator to invoke observer message handlers in the right context. ([67a2f25](https://github.com/ReactiveX/RxJS/commit/67a2f25))
+* **exhaustMap:** remove innersubscription when it completes ([7ca0859](https://github.com/ReactiveX/RxJS/commit/7ca0859))
+* **forEach:** ensure that teardown logic is called when nextHandler throws ([c50f528](https://github.com/ReactiveX/RxJS/commit/c50f528)), closes [#1411](https://github.com/ReactiveX/RxJS/issues/1411)
+* **forkJoin:** accepts observables emitting null or undefined ([6279d6b](https://github.com/ReactiveX/RxJS/commit/6279d6b)), closes [#1362](https://github.com/ReactiveX/RxJS/issues/1362)
+* **forkJoin:** dispose the inner subscriptions when the outer subscription is disposed ([c7bf30c](https://github.com/ReactiveX/RxJS/commit/c7bf30c))
+* **FutureAction:** add support for periodic scheduling with setInterval instead of setTimeout ([c4f5408](https://github.com/ReactiveX/RxJS/commit/c4f5408))
+* **Observable:** introduce Subscribable interface that will be used instead of Observable in inpu ([2256e7b](https://github.com/ReactiveX/RxJS/commit/2256e7b))
+* **Observable.prototype.forEach:** removed thisArg to match es-observable spec ([d5f1bcd](https://github.com/ReactiveX/RxJS/commit/d5f1bcd))
+* **package.json:** install typings only after packages are installed ([a48d796](https://github.com/ReactiveX/RxJS/commit/a48d796))
+* **Schedulers:** ensure schedulers can be reused after error in execution ([202b79a](https://github.com/ReactiveX/RxJS/commit/202b79a))
+* **takeLast:** fix takeLast behavior to emit correct order ([73eb658](https://github.com/ReactiveX/RxJS/commit/73eb658)), closes [#1407](https://github.com/ReactiveX/RxJS/issues/1407)
+* **typings:** set map function parameter for Observable.from as optional ([efa4dc3](https://github.com/ReactiveX/RxJS/commit/efa4dc3))
+
+### Features
+
+* **AsyncScheduler:** add AsyncScheduler implementation ([4486c1f](https://github.com/ReactiveX/RxJS/commit/4486c1f))
+* **if:** add static Observable.if creation operator. ([f7ff7ec](https://github.com/ReactiveX/RxJS/commit/f7ff7ec))
+* **let:** adds the let operator to Rx.KitchenSink ([dca6504](https://github.com/ReactiveX/RxJS/commit/dca6504))
+* **using:** add static Observable.using creation operator. ([6c76593](https://github.com/ReactiveX/RxJS/commit/6c76593))
+
+
+### BREAKING CHANGES
+
+* Observable.prototype.forEach: thisArg removed to match es-observable spec
+
+
+
 <a name="5.0.0-beta.2"></a>
 # [5.0.0-beta.2](https://github.com/ReactiveX/RxJS/compare/5.0.0-beta.1...v5.0.0-beta.2) (2016-02-10)
 

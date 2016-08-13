@@ -12,5 +12,11 @@
     "formatCodeOptions": {
         "indentSize": 2,
         "tabSize": 2
-    }
+    },
+    "exclude": [
+        "support/mocha-setup-node.js",
+        "support/mocha.sauce.gruntfile.js",
+        "support/mocha.sauce.runner.js",
+        "support/webpack.mocha.config.js"
+    ]
 }

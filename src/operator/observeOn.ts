@@ -4,8 +4,11 @@ import {Operator} from '../Operator';
 import {PartialObserver} from '../Observer';
 import {Subscriber} from '../Subscriber';
 import {Notification} from '../Notification';
+import {TeardownLogic} from '../Subscription';
 
 /**
+ * @see {@link Notification}
+ *
  * @param scheduler
  * @param delay
  * @return {Observable<R>|WebSocketSubject<T>|Observable<T>}
@@ -24,13 +27,19 @@ export class ObserveOnOperator<T> implements Operator<T, T> {
   constructor(private scheduler: Scheduler, private delay: number = 0) {
   }
 
-  call(subscriber: Subscriber<T>): Subscriber<T> {
-    return new ObserveOnSubscriber(subscriber, this.scheduler, this.delay);
+  call(subscriber: Subscriber<T>, source: any): TeardownLogic {
+    return source._subscribe(new ObserveOnSubscriber(subscriber, this.scheduler, this.delay));
   }
 }
 
+/**
+ * We need this JSDoc comment for affecting ESDoc.
+ * @ignore
+ * @extends {Ignored}
+ */
 export class ObserveOnSubscriber<T> extends Subscriber<T> {
-  static dispatch({ notification, destination }) {
+  static dispatch(arg: ObserveOnMessage) {
+    const { notification, destination } = arg;
     notification.observe(destination);
   }
 
@@ -59,7 +68,7 @@ export class ObserveOnSubscriber<T> extends Subscriber<T> {
   }
 }
 
-class ObserveOnMessage {
+export class ObserveOnMessage {
   constructor(public notification: Notification<any>,
               public destination: PartialObserver<any>) {
   }

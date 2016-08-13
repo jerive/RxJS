@@ -1,4 +1,6 @@
-import * as Rx from '../../../dist/cjs/Rx.DOM';
+import {expect} from 'chai';
+import * as sinon from 'sinon';
+import * as Rx from '../../../dist/cjs/Rx';
 import {MockWebSocket} from '../../helpers/ajax-helper';
 
 declare const __root__: any;
@@ -34,18 +36,41 @@ describe('Observable.webSocket', () => {
     subject.next('ping');
 
     subject.subscribe((x: string) => {
-      expect(x).toBe('pong');
+      expect(x).to.equal('pong');
       messageReceived = true;
     });
 
     const socket = MockWebSocket.lastSocket;
-    expect(socket.url).toBe('ws://mysocket');
+    expect(socket.url).to.equal('ws://mysocket');
 
     socket.open();
-    expect(socket.lastMessageSent).toBe('ping');
+    expect(socket.lastMessageSent).to.equal('ping');
 
     socket.triggerMessage(JSON.stringify('pong'));
-    expect(messageReceived).toBe(true);
+    expect(messageReceived).to.be.true;
+
+    subject.unsubscribe();
+  });
+
+  it('should allow the user to chain operators', () => {
+    let messageReceived = false;
+    const subject = Observable.webSocket('ws://mysocket');
+
+    subject
+      .map(x => x + '?')
+      .map(x => x + '!')
+      .map(x => x + '!')
+      .subscribe((x: string) => {
+        expect(x).to.equal('pong?!!');
+        messageReceived = true;
+      });
+
+    const socket = MockWebSocket.lastSocket;
+
+    socket.open();
+
+    socket.triggerMessage(JSON.stringify('pong'));
+    expect(messageReceived).to.be.true;
 
     subject.unsubscribe();
   });
@@ -67,7 +92,7 @@ describe('Observable.webSocket', () => {
       socket.triggerMessage(JSON.stringify(x));
     });
 
-    expect(results).toEqual(expected);
+    expect(results).to.deep.equal(expected);
 
     subject.unsubscribe();
   });
@@ -81,15 +106,15 @@ describe('Observable.webSocket', () => {
     });
 
     let socket = MockWebSocket.lastSocket;
-    expect(socket).not.toBeDefined();
+    expect(socket).not.exist;
 
     subject.subscribe();
 
     socket = MockWebSocket.lastSocket;
-    expect(socket.sent.length).toBe(0);
+    expect(socket.sent.length).to.equal(0);
 
     socket.open();
-    expect(socket.sent.length).toBe(expected.length);
+    expect(socket.sent.length).to.equal(expected.length);
 
     subject.unsubscribe();
   });
@@ -101,9 +126,9 @@ describe('Observable.webSocket', () => {
     socket.open();
 
     subject.next('avast!');
-    expect(socket.lastMessageSent).toBe('avast!');
+    expect(socket.lastMessageSent).to.equal('avast!');
     subject.next('ye swab!');
-    expect(socket.lastMessageSent).toBe('ye swab!');
+    expect(socket.lastMessageSent).to.equal('ye swab!');
 
     subject.unsubscribe();
   });
@@ -114,16 +139,18 @@ describe('Observable.webSocket', () => {
     const socket = MockWebSocket.lastSocket;
     socket.open();
 
-    expect(socket.readyState).toBe(1); // open
+    expect(socket.readyState).to.equal(1); // open
 
-    spyOn(socket, 'close').and.callThrough();
-    expect(socket.close).not.toHaveBeenCalled();
+    sinon.spy(socket, 'close');
+
+    expect(socket.close).not.have.been.called;
 
     subject.complete();
-    expect(socket.close).toHaveBeenCalled();
-    expect(socket.readyState).toBe(3); // closed
+    expect(socket.close).have.been.called;
+    expect(socket.readyState).to.equal(3); // closed
 
     subject.unsubscribe();
+    (<any>socket.close).restore();
   });
 
   it('should close the socket with a code and a reason when errored', () => {
@@ -132,13 +159,14 @@ describe('Observable.webSocket', () => {
     const socket = MockWebSocket.lastSocket;
     socket.open();
 
-    spyOn(socket, 'close').and.callThrough();
-    expect(socket.close).not.toHaveBeenCalled();
+    sinon.spy(socket, 'close');
+    expect(socket.close).not.have.been.called;
 
     subject.error({ code: 1337, reason: 'Too bad, so sad :('});
-    expect(socket.close).toHaveBeenCalledWith(1337, 'Too bad, so sad :(');
+    expect(socket.close).have.been.calledWith(1337, 'Too bad, so sad :(');
 
     subject.unsubscribe();
+    (<any>socket.close).restore();
   });
 
   it('should allow resubscription after closure via complete', () => {
@@ -153,8 +181,8 @@ describe('Observable.webSocket', () => {
     const socket2 = MockWebSocket.lastSocket;
     socket2.open();
 
-    expect(socket2).not.toBe(socket1);
-    expect(socket2.lastMessageSent).toBe('a mariner yer not. yarrr.');
+    expect(socket2).not.to.equal(socket1);
+    expect(socket2.lastMessageSent).to.equal('a mariner yer not. yarrr.');
 
     subject.unsubscribe();
   });
@@ -171,8 +199,8 @@ describe('Observable.webSocket', () => {
     const socket2 = MockWebSocket.lastSocket;
     socket2.open();
 
-    expect(socket2).not.toBe(socket1);
-    expect(socket2.lastMessageSent).toBe('yo-ho! yo-ho!');
+    expect(socket2).not.to.equal(socket1);
+    expect(socket2.lastMessageSent).to.equal('yo-ho! yo-ho!');
 
     subject.unsubscribe();
   });
@@ -190,7 +218,7 @@ describe('Observable.webSocket', () => {
     socket.open();
     socket.triggerMessage(JSON.stringify(expected));
 
-    expect(result).toEqual(expected);
+    expect(result).to.deep.equal(expected);
 
     subject.unsubscribe();
   });
@@ -203,18 +231,18 @@ describe('Observable.webSocket', () => {
       subject.next('ping');
 
       subject.subscribe((x: string) => {
-        expect(x).toBe('pong');
+        expect(x).to.equal('pong');
         messageReceived = true;
       });
 
       const socket = MockWebSocket.lastSocket;
-      expect(socket.url).toBe('ws://mysocket');
+      expect(socket.url).to.equal('ws://mysocket');
 
       socket.open();
-      expect(socket.lastMessageSent).toBe('ping');
+      expect(socket.lastMessageSent).to.equal('ping');
 
       socket.triggerMessage(JSON.stringify('pong'));
-      expect(messageReceived).toBe(true);
+      expect(messageReceived).to.be.true;
 
       subject.unsubscribe();
     });
@@ -228,7 +256,7 @@ describe('Observable.webSocket', () => {
       subject.subscribe();
 
       const socket = MockWebSocket.lastSocket;
-      expect(socket.protocol).toBe('someprotocol');
+      expect(socket.protocol).to.equal('someprotocol');
 
       subject.unsubscribe();
     });
@@ -253,7 +281,7 @@ describe('Observable.webSocket', () => {
         socket.triggerMessage(x);
       });
 
-      expect(results).toEqual(['ahoy!', 'yarr!', 'shove off!']);
+      expect(results).to.deep.equal(['ahoy!', 'yarr!', 'shove off!']);
 
       subject.unsubscribe();
     });
@@ -267,9 +295,9 @@ describe('Observable.webSocket', () => {
       });
 
       subject.subscribe((x: any) => {
-        expect(x).toBe('this should not happen');
+        expect(x).to.equal('this should not happen');
       }, (err: any) => {
-        expect(err).toEqual(new Error('I am a bad error'));
+        expect(err).to.be.an('error', 'I am a bad error');
       });
 
       const socket = MockWebSocket.lastSocket;
@@ -286,7 +314,7 @@ describe('Observable.webSocket', () => {
         closingObserver: {
           next: function (x) {
             calls++;
-            expect(x).toBe(undefined);
+            expect(x).to.be.an('undefined');
           }
         }
       });
@@ -295,17 +323,17 @@ describe('Observable.webSocket', () => {
       let socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(calls).toBe(0);
+      expect(calls).to.equal(0);
 
       subject.complete();
-      expect(calls).toBe(1);
+      expect(calls).to.equal(1);
 
       subject.subscribe();
       socket = MockWebSocket.lastSocket;
       socket.open();
 
       subject.error({ code: 1337 });
-      expect(calls).toBe(2);
+      expect(calls).to.equal(2);
 
       subject.unsubscribe();
     });
@@ -326,23 +354,23 @@ describe('Observable.webSocket', () => {
       let socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(closes.length).toBe(0);
+      expect(closes.length).to.equal(0);
 
       socket.triggerClose(expected[0]);
-      expect(closes.length).toBe(1);
+      expect(closes.length).to.equal(1);
 
       subject.subscribe(null, function (err) {
-        expect(err).toBe(expected[1]);
+        expect(err).to.equal(expected[1]);
       });
 
       socket = MockWebSocket.lastSocket;
       socket.open();
 
       socket.triggerClose(expected[1]);
-      expect(closes.length).toBe(2);
+      expect(closes.length).to.equal(2);
 
-      expect(closes[0]).toBe(expected[0]);
-      expect(closes[1]).toBe(expected[1]);
+      expect(closes[0]).to.equal(expected[0]);
+      expect(closes[1]).to.equal(expected[1]);
 
       subject.unsubscribe();
     });
@@ -366,7 +394,7 @@ describe('Observable.webSocket', () => {
       const socket = MockWebSocket.lastSocket;
       socket.open();
 
-      expect(socket.lastMessageSent).toEqual({ sub: 'foo' });
+      expect(socket.lastMessageSent).to.deep.equal({ sub: 'foo' });
 
       [1, 2, 3, 4, 5].map((x: number) => {
         return {
@@ -377,13 +405,87 @@ describe('Observable.webSocket', () => {
         socket.triggerMessage(JSON.stringify(x));
       });
 
-      expect(results).toEqual([1, 2, 4, 5]);
+      expect(results).to.deep.equal([1, 2, 4, 5]);
 
-      spyOn(socket, 'close').and.callThrough();
+      sinon.spy(socket, 'close');
       sub.unsubscribe();
-      expect(socket.lastMessageSent).toEqual({ unsub: 'foo' });
+      expect(socket.lastMessageSent).to.deep.equal({ unsub: 'foo' });
 
-      expect(socket.close).toHaveBeenCalled();
+      expect(socket.close).have.been.called;
+      (<any>socket.close).restore();
+    });
+
+    it('should work in combination with retry (issue #1466)', () => {
+      const error = { wasClean: false};
+      const results = [];
+
+      const subject = Observable.webSocket(<any>{url: 'ws://mysocket'})
+        .multiplex(
+          () => results.push('sub'),
+          () => results.push('unsub'),
+          () => true)
+        .retry(1);
+
+      subject.subscribe(
+        () => results.push('next'),
+        (e) => results.push(e));
+
+      let socket = MockWebSocket.lastSocket;
+
+      socket.triggerClose(error);
+
+      expect(results).to.deep.equal(['sub', 'unsub', 'sub', error, 'unsub']);
+    });
+
+    it('should not close the socket until all subscriptions complete', () => {
+      const socketSubject = Rx.Observable.webSocket(<any>{url: 'ws://mysocket'});
+      const results = [];
+      const socketMessages = [
+        {id: 'A'},
+        {id: 'B'},
+        {id: 'A', complete: true},
+        {id: 'B'},
+        {id: 'B', complete: true},
+      ];
+
+      socketSubject.multiplex(
+        () => 'no-op',
+        () => results.push('A unsub'),
+        (req: any) => req.id === 'A')
+        .takeWhile((req: any) => !req.complete)
+        .subscribe(
+          () => results.push('A next'),
+          (e) => results.push('A error ' + e),
+          () => results.push('A complete')
+        );
+
+      socketSubject.multiplex(
+        () => 'no-op',
+        () => results.push('B unsub'),
+        (req: any) => req.id === 'B')
+        .takeWhile((req: any) => !req.complete)
+        .subscribe(
+          () => results.push('B next'),
+          (e) => results.push('B error ' + e),
+          () => results.push('B complete')
+        );
+
+      // Setup socket and send messages
+      let socket = MockWebSocket.lastSocket;
+      socket.open();
+      socketMessages.forEach((msg) => {
+        socket.triggerMessage(JSON.stringify(msg));
+      });
+
+      expect(results).to.deep.equal([
+        'A next',
+        'B next',
+        'A complete',
+        'A unsub',
+        'B next',
+        'B complete',
+        'B unsub',
+      ]);
     });
   });
 });

@@ -2,44 +2,49 @@ import {root} from './root';
 import {isArray} from './isArray';
 import {isPromise} from './isPromise';
 import {Subscriber} from '../Subscriber';
-import {Observable} from '../Observable';
-import {SymbolShim} from '../util/SymbolShim';
+import {Observable, ObservableInput} from '../Observable';
+import {$$iterator} from '../symbol/iterator';
 import {Subscription} from '../Subscription';
 import {InnerSubscriber} from '../InnerSubscriber';
 import {OuterSubscriber} from '../OuterSubscriber';
+import {$$observable} from '../symbol/observable';
 
 export function subscribeToResult<T, R>(outerSubscriber: OuterSubscriber<T, R>,
                                         result: any,
                                         outerValue?: T,
-                                        outerIndex?: number): Subscription {
-  let destination: Subscriber<R> = new InnerSubscriber(outerSubscriber, outerValue, outerIndex);
+                                        outerIndex?: number): Subscription;
+export function subscribeToResult<T>(outerSubscriber: OuterSubscriber<any, any>,
+                                     result: ObservableInput<T>,
+                                     outerValue?: T,
+                                     outerIndex?: number): Subscription {
+  let destination: Subscriber<any> = new InnerSubscriber(outerSubscriber, outerValue, outerIndex);
 
-  if (destination.isUnsubscribed) {
-    return;
+  if (destination.closed) {
+    return null;
   }
 
   if (result instanceof Observable) {
     if (result._isScalar) {
-      destination.next(result.value);
+      destination.next((<any>result).value);
       destination.complete();
-      return;
+      return null;
     } else {
       return result.subscribe(destination);
     }
   }
 
   if (isArray(result)) {
-    for (let i = 0, len = result.length; i < len && !destination.isUnsubscribed; i++) {
+    for (let i = 0, len = result.length; i < len && !destination.closed; i++) {
       destination.next(result[i]);
     }
-    if (!destination.isUnsubscribed) {
+    if (!destination.closed) {
       destination.complete();
     }
   } else if (isPromise(result)) {
     result.then(
-      (value: any) => {
-        if (!destination.isUnsubscribed) {
-          destination.next(value);
+      (value) => {
+        if (!destination.closed) {
+          destination.next(<any>value);
           destination.complete();
         }
       },
@@ -50,24 +55,28 @@ export function subscribeToResult<T, R>(outerSubscriber: OuterSubscriber<T, R>,
       root.setTimeout(() => { throw err; });
     });
     return destination;
-  } else if (typeof result[SymbolShim.iterator] === 'function') {
-    for (let item of result) {
-      destination.next(item);
-      if (destination.isUnsubscribed) {
+  } else if (typeof result[$$iterator] === 'function') {
+    const iterator = <any>result[$$iterator]();
+    do {
+      let item = iterator.next();
+      if (item.done) {
+        destination.complete();
         break;
       }
-    }
-    if (!destination.isUnsubscribed) {
-      destination.complete();
-    }
-  } else if (typeof result[SymbolShim.observable] === 'function') {
-    const obs = result[SymbolShim.observable]();
+      destination.next(item.value);
+      if (destination.closed) {
+        break;
+      }
+    } while (true);
+  } else if (typeof result[$$observable] === 'function') {
+    const obs = result[$$observable]();
     if (typeof obs.subscribe !== 'function') {
-      destination.error('invalid observable');
+      destination.error(new Error('invalid observable'));
     } else {
       return obs.subscribe(new InnerSubscriber(outerSubscriber, outerValue, outerIndex));
     }
   } else {
     destination.error(new TypeError('unknown type returned'));
   }
+  return null;
 }

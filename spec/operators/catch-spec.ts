@@ -1,6 +1,7 @@
-import * as Rx from '../../dist/cjs/Rx.KitchenSink';
+import {expect} from 'chai';
+import * as Rx from '../../dist/cjs/Rx';
+import {createObservableInputs} from '../helpers/test-helper';
 declare const {hot, cold, asDiagram, expectObservable, expectSubscriptions};
-import {DoneSignature} from '../helpers/test-helper';
 
 declare const rxTestSchdeuler: Rx.TestScheduler;
 const Observable = Rx.Observable;
@@ -213,16 +214,32 @@ describe('Observable.prototype.catch', () => {
     expectSubscriptions(e2.subscriptions).toBe(e2subs);
   });
 
-  it('should pass the error as the first argument', (done: DoneSignature) => {
+  it('should pass the error as the first argument', (done: MochaDone) => {
     Observable.throw('bad')
       .catch((err: any) => {
-        expect(err).toBe('bad');
+        expect(err).to.equal('bad');
         return Observable.empty();
       })
       .subscribe(() => {
         //noop
        }, (err: any) => {
-          done.fail('should not be called');
-        }, done);
+          done(new Error('should not be called'));
+        }, () => {
+          done();
+        });
+  });
+
+  it('should accept selector returns any ObservableInput', (done: MochaDone) => {
+    const input$ = createObservableInputs(42);
+
+    input$.mergeMap(input =>
+      Observable.throw('bad').catch(err => input)
+    ).subscribe(x => {
+      expect(x).to.be.equal(42);
+    }, (err: any) => {
+      done(new Error('should not be called'));
+    }, () => {
+      done();
+    });
   });
 });

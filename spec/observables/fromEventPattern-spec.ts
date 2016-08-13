@@ -1,11 +1,26 @@
-/* globals describe, it, expect, jasmine */
+import {expect} from 'chai';
 import * as Rx from '../../dist/cjs/Rx';
-import {DoneSignature} from '../helpers/test-helper';
 
+declare const rxTestScheduler: Rx.TestScheduler;
+declare const {hot, asDiagram, expectObservable, expectSubscriptions};
 const Observable = Rx.Observable;
 
 /** @test {fromEventPattern} */
 describe('Observable.fromEventPattern', () => {
+  asDiagram('fromEventPattern(addHandler, removeHandler)')
+  ('should create an observable from the handler API', () => {
+    function addHandler(h) {
+      Observable.timer(50, 20, rxTestScheduler)
+        .mapTo('ev')
+        .take(2)
+        .concat(Observable.never())
+        .subscribe(h);
+    }
+    const e1 = Observable.fromEventPattern(addHandler, () => void 0);
+    const expected = '-----x-x---';
+    expectObservable(e1).toBe(expected, {x: 'ev'});
+  });
+
   it('should call addHandler on subscription', () => {
     let addHandlerCalledWith;
     const addHandler = (h: any) => {
@@ -21,7 +36,7 @@ describe('Observable.fromEventPattern', () => {
         //noop
       });
 
-    expect(typeof addHandlerCalledWith).toBe('function');
+    expect(addHandlerCalledWith).to.be.a('function');
   });
 
   it('should call removeHandler on unsubscription', () => {
@@ -40,7 +55,7 @@ describe('Observable.fromEventPattern', () => {
 
     subscription.unsubscribe();
 
-    expect(typeof removeHandlerCalledWith).toBe('function');
+    expect(removeHandlerCalledWith).to.be.a('function');
   });
 
   it('should send errors in addHandler down the error path', () => {
@@ -51,11 +66,11 @@ describe('Observable.fromEventPattern', () => {
       }).subscribe(() => {
         //noop
        }, (err: any) => {
-          expect(err).toBe('bad');
+          expect(err).to.equal('bad');
         });
   });
 
-  it('should accept a selector that maps outgoing values', (done: DoneSignature) => {
+  it('should accept a selector that maps outgoing values', (done: MochaDone) => {
     let target;
     const trigger = function (...args) {
       if (target) {
@@ -75,15 +90,17 @@ describe('Observable.fromEventPattern', () => {
 
     Observable.fromEventPattern(addHandler, removeHandler, selector).take(1)
       .subscribe((x: any) => {
-        expect(x).toBe('testme!');
+        expect(x).to.equal('testme!');
       }, (err: any) => {
-        done.fail('should not be called');
-      }, done);
+        done(new Error('should not be called'));
+      }, () => {
+        done();
+      });
 
     trigger('test', 'me');
   });
 
-  it('should send errors in the selector down the error path', (done: DoneSignature) => {
+  it('should send errors in the selector down the error path', (done: MochaDone) => {
     let target;
     const trigger = (value: any) => {
       if (target) {
@@ -103,12 +120,12 @@ describe('Observable.fromEventPattern', () => {
 
     Observable.fromEventPattern(addHandler, removeHandler, selector)
       .subscribe((x: any) => {
-        done.fail('should not be called');
+        done(new Error('should not be called'));
       }, (err: any) => {
-        expect(err).toBe('bad');
+        expect(err).to.equal('bad');
         done();
       }, () => {
-        done.fail('should not be called');
+        done(new Error('should not be called'));
       });
 
     trigger('test');
